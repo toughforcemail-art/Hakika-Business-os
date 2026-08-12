@@ -1,0 +1,16 @@
+begin;
+create extension if not exists pgcrypto;
+create extension if not exists citext;
+create schema if not exists platform;
+create schema if not exists iam;
+create schema if not exists billing;
+create schema if not exists audit;
+create schema if not exists communications;
+create schema if not exists integrations;
+create schema if not exists real_estate;
+create schema if not exists hr;
+create schema if not exists finance;
+create schema if not exists security_ops;
+create schema if not exists private;
+create or replace function private.set_updated_at() returns trigger language plpgsql set search_path = pg_catalog as $$ begin new.updated_at = now(); return new; end; $$;
+commit;

@@ -1,0 +1,115 @@
+[
+  {
+    "id": "PERM-001",
+    "name": "Service Access Gate",
+    "type": "service_subscription",
+    "serviceKey": "hakika",
+    "appliesTo": "All /app/real-estate/* routes",
+    "exemptRoles": ["Super Admin", "Director", "Director / Super Admin", "Administrator"],
+    "failBehavior": "Redirect to /app/account/billing?service=hakika"
+  },
+  {
+    "id": "PERM-002",
+    "name": "Page Visibility Gate",
+    "type": "page_visibility",
+    "appliesTo": "All AccessGuard-wrapped routes",
+    "source": "page_visibility / profile_page_visibility tables",
+    "failBehavior": "Redirect to /app/dashboard (or /app/tenant/dashboard for Tenant role)"
+  },
+  {
+    "id": "PERM-003",
+    "name": "Invoice Delete",
+    "type": "role_gate",
+    "allowedRoles": ["Super Admin", "Administrator", "Director", "Director / Super Admin"],
+    "appliesTo": "RE-INVLIST-ROW-BTN-DELETE, RE-INVLIST-HDR-BTN-DELETEALL",
+    "failBehavior": "Toast: Only Super Admins, Administrators, and Directors can delete invoices."
+  },
+  {
+    "id": "PERM-004",
+    "name": "Payment Backfill",
+    "type": "role_gate",
+    "allowedRoles": ["Super Admin", "Administrator", "Director", "Director / Super Admin"],
+    "appliesTo": "RE-MPESA-HDR-BTN-BACKFILL",
+    "failBehavior": "Toast: Only admins can run payment backfill."
+  },
+  {
+    "id": "PERM-005",
+    "name": "Force Link Payment",
+    "type": "role_gate",
+    "allowedRoles": ["Super Admin", "Administrator", "Director", "Director / Super Admin"],
+    "appliesTo": "RE-MPESA-MODAL-BTN-FORCELINK",
+    "failBehavior": "Toast: Only admins can force-link payments."
+  },
+  {
+    "id": "PERM-006",
+    "name": "Resend Confirmation SMS",
+    "type": "role_gate",
+    "allowedRoles": ["Super Admin", "Administrator", "Director", "Director / Super Admin"],
+    "appliesTo": "RE-INVLIST-STK-BTN-RESEND-SMS",
+    "failBehavior": "Toast: Only admins can resend confirmation SMS."
+  },
+  {
+    "id": "PERM-007",
+    "name": "Tenant Role Redirect",
+    "type": "role_redirect",
+    "role": "Tenant",
+    "redirectTo": "/app/tenant/dashboard",
+    "appliesTo": "ModuleRedirector, AccessGuard canSeePage failure"
+  },
+  {
+    "id": "PERM-008",
+    "name": "Landlord Role Redirect",
+    "type": "role_redirect",
+    "role": "Landlord",
+    "redirectTo": "/app/landlord/dashboard",
+    "appliesTo": "ModuleRedirector"
+  },
+  {
+    "id": "PERM-009",
+    "name": "Caretaker Role Redirect",
+    "type": "role_redirect",
+    "role": "Caretaker",
+    "redirectTo": "/app/caretaker/dashboard",
+    "appliesTo": "ModuleRedirector"
+  },
+  {
+    "id": "PERM-010",
+    "name": "Swap Unit Visibility",
+    "type": "conditional_visibility",
+    "condition": "tenant.is_active && tenant.current_unit_id",
+    "appliesTo": "RE-TENANTS-ROW-BTN-SWAP",
+    "note": "No role restriction — any user with page access can swap units"
+  },
+  {
+    "id": "PERM-011",
+    "name": "Auto-Billing No Role Gate",
+    "type": "missing_gate",
+    "appliesTo": "RE-AUTOBILL-HDR-BTN-RUN",
+    "risk": "Any authenticated user with hakika service access can run billing",
+    "recommendation": "Add role gate in new system"
+  },
+  {
+    "id": "PERM-012",
+    "name": "Tenant Archive No Role Gate",
+    "type": "missing_gate",
+    "appliesTo": "RE-TENANTS-ROW-BTN-ARCHIVE",
+    "risk": "Any authenticated user with page access can archive tenants",
+    "recommendation": "Add role gate in new system"
+  },
+  {
+    "id": "PERM-013",
+    "name": "STK Push No Role Gate",
+    "type": "missing_gate",
+    "appliesTo": "RE-INVLIST-STK-BTN-SEND, RE-RECON-DRILL-BTN-STK, RE-AUTOBILL-UNIT-BTN-STK",
+    "risk": "Any authenticated user can trigger M-Pesa STK push",
+    "recommendation": "Consider role gate in new system"
+  },
+  {
+    "id": "PERM-014",
+    "name": "B2C Payout No Role Gate",
+    "type": "missing_gate",
+    "appliesTo": "RE-RECON-DRILL-BTN-DISBURSE",
+    "risk": "Any authenticated user can trigger B2C landlord payout",
+    "recommendation": "Add role gate in new system"
+  }
+]

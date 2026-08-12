@@ -1,0 +1,15 @@
+{
+  "name": "@hakika/backend",
+  "private": true,
+  "scripts": {
+    "start": "node --env-file=.env.local src/server.mjs",
+    "start:production": "node src/server.mjs",
+    "db:dry-run": "supabase db push --dry-run",
+    "test": "node --test tests/sms-phone.test.mjs tests/provisioning-sql.test.mjs tests/app-mfa-security.test.mjs tests/platform-owner-repair.test.mjs tests/migration-integrity.test.mjs",
+    "test:functions": "deno test --node-modules-dir=auto --allow-env --allow-net --allow-read supabase/functions/send-sms/index.test.ts supabase/functions/app-mfa/index.test.ts"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.38.2",
+    "jose": "^6.2.8"
+  }
+}

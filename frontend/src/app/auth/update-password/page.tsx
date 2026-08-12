@@ -1,0 +1,12 @@
+"use client";
+
+import Link from "next/link";
+import { FormEvent, useMemo, useState } from "react";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+
+export default function UpdatePassword() {
+  const [password, setPassword] = useState(""); const [confirmation, setConfirmation] = useState(""); const [error, setError] = useState(""); const [saving, setSaving] = useState(false);
+  const rules = useMemo(() => ({ length: password.length >= 8, upper: /[A-Z]/.test(password), lower: /[a-z]/.test(password), number: /\d/.test(password) }), [password]);
+  async function submit(event: FormEvent<HTMLFormElement>) { event.preventDefault(); setError(""); if (!Object.values(rules).every(Boolean)) { setError("Choose a password that meets all requirements."); return; } if (password !== confirmation) { setError("Passwords do not match."); return; } setSaving(true); const result = await createSupabaseBrowserClient().auth.updateUser({ password }); if (result.error) { setError("This recovery link is invalid or expired. Request a new one."); setSaving(false); return; } window.location.assign("/auth/reset-success"); }
+  return <main className="auth-page"><section className="auth-panel"><Link href="/" className="wordmark">hakika<span>.</span></Link><div className="auth-card card"><div className="eyebrow">Account recovery</div><h1>Choose a new password</h1><p className="auth-lede">Use a password you do not reuse in another service.</p><form onSubmit={submit}><label htmlFor="new-password">New password</label><input id="new-password" type="password" required autoComplete="new-password" value={password} onChange={(event) => setPassword(event.target.value)} /><ul className="password-rules">{[[rules.length, "At least 8 characters"], [rules.upper, "One uppercase letter"], [rules.lower, "One lowercase letter"], [rules.number, "One number"]].map(([valid, label]) => <li key={label as string} className={valid ? "valid" : ""}>{valid ? "✓" : "○"} {label as string}</li>)}</ul><label htmlFor="confirm-password">Confirm password</label><input id="confirm-password" type="password" required autoComplete="new-password" value={confirmation} onChange={(event) => setConfirmation(event.target.value)} />{error && <p className="auth-error" role="alert">{error}</p>}<button className="button primary auth-submit" type="submit" disabled={saving}>{saving ? "Updating…" : "Update password"}</button></form><Link href="/login" className="back-link" style={{ display: "block", marginTop: 20 }}>Back to sign in</Link></div></section></main>;
+}

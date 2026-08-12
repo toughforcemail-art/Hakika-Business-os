@@ -1,0 +1,277 @@
+[
+  {
+    "id": "DA-001",
+    "page": "Dashboard",
+    "table": "re_properties",
+    "operation": "SELECT count",
+    "filter": "company_id (if not elevated role)",
+    "companyFilter": "conditional",
+    "defect": "Elevated roles see all data"
+  },
+  {
+    "id": "DA-002",
+    "page": "Dashboard",
+    "table": "re_units",
+    "operation": "SELECT",
+    "columns": "id, status, rent_amount",
+    "filter": "company_id (if not elevated role)",
+    "companyFilter": "conditional"
+  },
+  {
+    "id": "DA-003",
+    "page": "Dashboard",
+    "table": "re_invoices",
+    "operation": "SELECT",
+    "columns": "amount_due, amount_paid, status",
+    "filter": "company_id (if not elevated role)",
+    "companyFilter": "conditional"
+  },
+  {
+    "id": "DA-004",
+    "page": "Properties",
+    "table": "re_properties",
+    "operation": "SELECT",
+    "columns": "*, re_units(id,status,rent_amount)",
+    "filter": "is_deleted=false, deleted_at IS NULL",
+    "companyFilter": "NONE",
+    "defect": "DEFECT-005: No company filter"
+  },
+  {
+    "id": "DA-005",
+    "page": "Properties",
+    "table": "re_property_stats",
+    "operation": "SELECT",
+    "columns": "*",
+    "filter": "property_id IN (...)",
+    "companyFilter": "none",
+    "note": "View may not exist in new DB"
+  },
+  {
+    "id": "DA-006",
+    "page": "Properties",
+    "table": "re_properties",
+    "operation": "INSERT",
+    "payload": "all form fields + owner_id, created_by, company_id, photos, photo_url",
+    "companyFilter": "company_id set from resolvedCompanyId"
+  },
+  {
+    "id": "DA-007",
+    "page": "Properties",
+    "table": "re_properties",
+    "operation": "UPDATE",
+    "payload": "all form fields",
+    "filter": "id = editingId"
+  },
+  {
+    "id": "DA-008",
+    "page": "Properties",
+    "rpc": "archive_record",
+    "operation": "RPC",
+    "params": "p_table_name='re_properties', p_record_id, p_reason='delete'"
+  },
+  {
+    "id": "DA-009",
+    "page": "Units",
+    "table": "re_properties",
+    "operation": "SELECT",
+    "columns": "id, name, planned_unit_mix",
+    "filter": "none",
+    "companyFilter": "NONE",
+    "defect": "DEFECT-005"
+  },
+  {
+    "id": "DA-010",
+    "page": "Units",
+    "table": "re_units",
+    "operation": "SELECT",
+    "columns": "*, property:re_properties(name)",
+    "filter": "none",
+    "companyFilter": "NONE",
+    "defect": "DEFECT-001"
+  },
+  {
+    "id": "DA-011",
+    "page": "Units",
+    "table": "re_units",
+    "operation": "INSERT",
+    "payload": "all form fields + created_by, company_id"
+  },
+  {
+    "id": "DA-012",
+    "page": "Units",
+    "table": "re_units",
+    "operation": "UPDATE",
+    "payload": "all form fields",
+    "filter": "id = editingId"
+  },
+  {
+    "id": "DA-013",
+    "page": "Units",
+    "table": "re_units",
+    "operation": "DELETE",
+    "filter": "id = confirmDelete",
+    "note": "Hard delete"
+  },
+  {
+    "id": "DA-014",
+    "page": "Tenant Management",
+    "table": "re_tenants",
+    "operation": "SELECT",
+    "columns": "full join with unit, property, profile",
+    "filter": "is_active=true",
+    "companyFilter": "NONE",
+    "defect": "DEFECT-001: No company filter"
+  },
+  {
+    "id": "DA-015",
+    "page": "Tenant Management",
+    "table": "re_units",
+    "operation": "SELECT (available)",
+    "columns": "id, unit_number, rent_amount, status, lease_type, property_id, property:re_properties(id,name)",
+    "filter": "status=vacant",
+    "companyFilter": "NONE",
+    "defect": "DEFECT-001"
+  },
+  {
+    "id": "DA-016",
+    "page": "Tenant Management",
+    "table": "re_tenants",
+    "operation": "INSERT",
+    "payload": "form fields + company_id, created_by, is_active=true"
+  },
+  {
+    "id": "DA-017",
+    "page": "Tenant Management",
+    "rpc": "swap_tenant_unit",
+    "operation": "RPC",
+    "params": "p_tenant_id, p_to_unit_id, p_effective_date, p_reason"
+  },
+  {
+    "id": "DA-018",
+    "page": "Tenant Management",
+    "rpc": "archive_record",
+    "operation": "RPC",
+    "params": "p_table_name='re_tenants', p_record_id, p_reason='delete'"
+  },
+  {
+    "id": "DA-019",
+    "page": "Invoice List",
+    "table": "re_invoices",
+    "operation": "SELECT",
+    "columns": "*",
+    "filter": "deleted_at IS NULL",
+    "companyFilter": "CLIENT-SIDE ONLY",
+    "defect": "DEFECT-002: Company filter applied in JS after fetch"
+  },
+  {
+    "id": "DA-020",
+    "page": "Invoice List",
+    "table": "re_invoices",
+    "operation": "UPDATE (soft delete)",
+    "payload": "deleted_at, deleted_by",
+    "filter": "id = invoice.id",
+    "roleGate": ["Super Admin", "Administrator", "Director", "Director / Super Admin"]
+  },
+  {
+    "id": "DA-021",
+    "page": "Invoice List",
+    "table": "mpesa_stk_request_context",
+    "operation": "INSERT",
+    "payload": "STK context snapshot"
+  },
+  {
+    "id": "DA-022",
+    "page": "Invoice List",
+    "realtimeTable": "re_invoices",
+    "operation": "REALTIME SUBSCRIBE",
+    "filter": "company_id = profile.company_id"
+  },
+  {
+    "id": "DA-023",
+    "page": "Invoice List",
+    "realtimeTable": "re_payments",
+    "operation": "REALTIME SUBSCRIBE",
+    "filter": "company_id = profile.company_id"
+  },
+  {
+    "id": "DA-024",
+    "page": "Invoice List",
+    "realtimeTable": "mpesa_transactions",
+    "operation": "REALTIME SUBSCRIBE",
+    "filter": "company_id = profile.company_id"
+  },
+  {
+    "id": "DA-025",
+    "page": "Auto-Billing",
+    "table": "re_properties",
+    "operation": "SELECT",
+    "columns": "billing config fields",
+    "filter": "none",
+    "companyFilter": "NONE",
+    "defect": "DEFECT-004"
+  },
+  {
+    "id": "DA-026",
+    "page": "Auto-Billing",
+    "table": "re_invoices",
+    "operation": "INSERT (batch)",
+    "payload": "invoice batch for billing cycle",
+    "companyFilter": "company_id from profile"
+  },
+  {
+    "id": "DA-027",
+    "page": "M-Pesa Tracker",
+    "table": "mpesa_transactions",
+    "operation": "SELECT",
+    "columns": "*",
+    "filter": "none",
+    "companyFilter": "NONE",
+    "defect": "DEFECT-003",
+    "limit": 1000
+  },
+  {
+    "id": "DA-028",
+    "page": "M-Pesa Tracker",
+    "table": "re_invoices",
+    "operation": "UPDATE (backfill/force-link)",
+    "payload": "amount_paid, reconciliation_status, mpesa_receipt_no, mpesa_checkout_request_id, mpesa_last_callback_at",
+    "roleGate": ["Super Admin", "Administrator", "Director", "Director / Super Admin"]
+  },
+  {
+    "id": "DA-029",
+    "page": "Reconciliation",
+    "table": "mpesa_transactions",
+    "operation": "SELECT",
+    "columns": "*",
+    "filter": "none",
+    "companyFilter": "NONE",
+    "limit": 100
+  },
+  {
+    "id": "DA-030",
+    "page": "Reconciliation",
+    "table": "re_finance_ledger",
+    "operation": "SELECT",
+    "columns": "*",
+    "filter": "company_id",
+    "companyFilter": "YES"
+  },
+  {
+    "id": "DA-031",
+    "page": "Reconciliation",
+    "table": "re_finance_ledger",
+    "operation": "INSERT",
+    "payload": "landlord payout entry",
+    "trigger": "Disburse landlord payable button"
+  },
+  {
+    "id": "DA-032",
+    "page": "Invoice Overview",
+    "table": "re_invoices",
+    "operation": "SELECT",
+    "columns": "amount_due, amount_paid, status",
+    "filter": "none",
+    "companyFilter": "NONE",
+    "defect": "DEFECT-009"
+  }
+]

@@ -1,0 +1,267 @@
+[
+  {
+    "id": "RE-PROPS-FORM-BTN-SAVE",
+    "label": "Save Property / Update Property",
+    "page": "Properties",
+    "type": "submit",
+    "handler": "handleSubmit()",
+    "dbOperation": "INSERT or UPDATE re_properties",
+    "storageOperation": "UnifiedStorageService.uploadMultiple to property-photos bucket",
+    "successToast": "Property added/updated successfully!",
+    "failureToast": "Error saving property",
+    "refreshBehavior": "fetchProperties()"
+  },
+  {
+    "id": "RE-PROPS-DEL-BTN-CONFIRM",
+    "label": "Delete Permanently",
+    "page": "Properties",
+    "type": "button",
+    "handler": "handleDelete()",
+    "dbOperation": "RPC archive_record(re_properties, id, 'delete')",
+    "successToast": "Property archived.",
+    "failureToast": "Error deleting property OR 'Delete the linked units first'",
+    "refreshBehavior": "fetchProperties()"
+  },
+  {
+    "id": "RE-UNITS-FORM-BTN-SAVE",
+    "label": "Save Unit / Update Unit",
+    "page": "Units",
+    "type": "submit",
+    "handler": "handleSubmit()",
+    "dbOperation": "INSERT or UPDATE re_units",
+    "successToast": "Unit added/updated successfully!",
+    "failureToast": "Error saving unit",
+    "refreshBehavior": "fetchData()"
+  },
+  {
+    "id": "RE-UNITS-DEL-BTN-CONFIRM",
+    "label": "Delete Now",
+    "page": "Units",
+    "type": "button",
+    "handler": "handleDelete(id)",
+    "dbOperation": "DELETE re_units WHERE id = id",
+    "successToast": "Unit removed successfully",
+    "failureToast": "Failed to delete unit",
+    "refreshBehavior": "fetchData()"
+  },
+  {
+    "id": "RE-TENANTS-FORM-BTN-SAVE",
+    "label": "Save Tenant",
+    "page": "Tenant Management",
+    "type": "submit",
+    "handler": "handleSubmit()",
+    "dbOperations": [
+      "INSERT or UPDATE re_tenants",
+      "UPDATE profiles (if profile_id exists)",
+      "UPDATE re_units status=occupied",
+      "UPDATE re_units status=vacant (previous unit on reassign)",
+      "UPDATE re_leases status=inactive (previous lease on reassign)",
+      "INSERT or UPDATE re_leases",
+      "INSERT re_invoices (initial invoice)"
+    ],
+    "edgeFunctions": ["real-estate-audit-tenant-created (if ENABLE_REAL_ESTATE_AUDIT)"],
+    "successToast": "Tenant successfully onboarded! / Tenant details updated!",
+    "failureToast": "Error adding tenant",
+    "refreshBehavior": "fetchTenantData() + fetchAvailableUnits()"
+  },
+  {
+    "id": "RE-TENANTS-ROW-BTN-ARCHIVE",
+    "label": "Archive",
+    "page": "Tenant Management",
+    "type": "button",
+    "handler": "handleDeleteTenant(tenant)",
+    "confirmation": "window.confirm('Archive [name] and clear their remaining unit assignment and open invoices?')",
+    "dbOperations": [
+      "UPDATE re_units status=vacant",
+      "UPDATE re_leases status=inactive",
+      "SELECT re_invoices (get invoice IDs)",
+      "UPDATE re_invoices deleted_at (soft delete all)",
+      "UPDATE re_payments deleted_at",
+      "UPDATE re_tenants current_unit_id=null, is_active=false",
+      "RPC archive_record(re_tenants, id, 'delete')"
+    ],
+    "successToast": "[name] archived and removed from the active directory.",
+    "failureToast": "Failed to archive tenant",
+    "refreshBehavior": "fetchTenantData() + fetchAvailableUnits() + fetchAllUnits()"
+  },
+  {
+    "id": "RE-TENANTS-ROW-BTN-SENDLOGIN",
+    "label": "Send Login / Resend Login",
+    "page": "Tenant Management",
+    "type": "button",
+    "handler": "handleSendTenantLogin(tenant, resend)",
+    "edgeFunction": "admin-create-tenant-login",
+    "payload": "{ tenant_id, resend }",
+    "successToast": "Tenant login created/re-sent for [name]",
+    "failureToast": "Failed to send tenant login",
+    "refreshBehavior": "fetchTenantData()"
+  },
+  {
+    "id": "RE-TENANTS-ROW-BTN-RESET",
+    "label": "Reset",
+    "page": "Tenant Management",
+    "type": "button",
+    "handler": "handleResetTenantLogin(tenant)",
+    "edgeFunction": "admin-create-tenant-login",
+    "payload": "{ tenant_id, reset: true }",
+    "successToast": "Tenant portal login reset for [name]",
+    "failureToast": "Failed to reset tenant login",
+    "refreshBehavior": "fetchTenantData()"
+  },
+  {
+    "id": "RE-TENANTS-MODAL-RENT-BTN-SAVE",
+    "label": "Save rent (check icon)",
+    "page": "Tenant Management (Lease modal)",
+    "type": "button",
+    "handler": "handleUpdateRent()",
+    "dbOperation": "UPDATE re_units SET rent_amount = editRentAmount WHERE id = selectedTenant.unit.id",
+    "successToast": "Rent amount updated successfully",
+    "failureToast": "Error updating rent",
+    "refreshBehavior": "Optimistic local state update"
+  },
+  {
+    "id": "RE-TENANTS-SWAP-BTN-CONFIRM",
+    "label": "Confirm Swap",
+    "page": "Tenant Management (Swap dialog)",
+    "type": "button",
+    "handler": "submitUnitTransfer()",
+    "dbOperations": [
+      "RPC swap_tenant_unit(p_tenant_id, p_to_unit_id, p_effective_date, p_reason)",
+      "UPDATE re_invoices unit_id (migrate arrears)",
+      "UPDATE re_invoices deleted_at (write off arrears)",
+      "UPDATE re_invoices status=paid (mark paid arrears)"
+    ],
+    "successToast": "Unit swapped. Arrears handled as selected.",
+    "failureToast": "Failed to swap tenant unit",
+    "refreshBehavior": "fetchTenantData()"
+  },
+  {
+    "id": "RE-INVLIST-HDR-BTN-SYNC",
+    "label": "Sync Payments",
+    "page": "Invoice List",
+    "type": "button",
+    "handler": "handleSyncPayments()",
+    "service": "syncMpesaPayments()",
+    "successToast": "[message]. Synced N payments.",
+    "failureToast": "Failed to sync payments",
+    "refreshBehavior": "fetchData()"
+  },
+  {
+    "id": "RE-INVLIST-HDR-BTN-GENERATE",
+    "label": "Run Monthly Billing",
+    "page": "Invoice List",
+    "type": "button",
+    "handler": "handleGenerateInvoices()",
+    "service": "generateMonthlyInvoices(date, company_id, user_id)",
+    "successToast": "Successfully generated N invoices.",
+    "failureToast": "Failed to generate invoices",
+    "refreshBehavior": "fetchData()"
+  },
+  {
+    "id": "RE-INVLIST-HDR-BTN-EXPORT",
+    "label": "Export",
+    "page": "Invoice List",
+    "type": "button",
+    "handler": "NONE",
+    "status": "Legacy placeholder / non-functional"
+  },
+  {
+    "id": "RE-INVLIST-HDR-BTN-DELETEALL",
+    "label": "Delete All",
+    "page": "Invoice List",
+    "type": "button",
+    "handler": "handleDeleteAllFiltered()",
+    "roleGate": ["Super Admin", "Administrator", "Director", "Director / Super Admin"],
+    "confirmation": "window.confirm('Are you sure you want to delete all N currently displayed invoices?')",
+    "dbOperation": "UPDATE re_invoices SET deleted_at, deleted_by WHERE id IN (filteredIds)",
+    "successToast": "Successfully deleted N invoices.",
+    "failureToast": "Failed to delete invoices",
+    "refreshBehavior": "Local state update"
+  },
+  {
+    "id": "RE-INVLIST-STK-BTN-SEND",
+    "label": "Send KES X",
+    "page": "Invoice List (STK modal)",
+    "type": "button",
+    "handler": "sendStkFromList()",
+    "service": "callDaraja(stk-push)",
+    "dbOperations": [
+      "SELECT re_invoices (reload)",
+      "INSERT mpesa_stk_request_context",
+      "UPDATE re_invoices mpesa_checkout_request_id, mpesa_last_stk_request_at, reconciliation_status"
+    ],
+    "successToast": "STK sent for [invoice]. Paybill: X. Account: Y. Amount: KES Z.",
+    "failureToast": "Failed to send STK push"
+  },
+  {
+    "id": "RE-AUTOBILL-HDR-BTN-RUN",
+    "label": "Run Global Cycle",
+    "page": "Auto-Billing",
+    "type": "button",
+    "handler": "handleProcess()",
+    "dbOperations": [
+      "SELECT re_invoices (dedup check for month)",
+      "INSERT re_invoices (batch)"
+    ],
+    "successToast": "Successfully generated N rent invoices",
+    "failureToast": "Failed to generate bulk invoices",
+    "refreshBehavior": "fetchData()"
+  },
+  {
+    "id": "RE-MPESA-HDR-BTN-BACKFILL",
+    "label": "Backfill Past Payments",
+    "page": "M-Pesa Tracker",
+    "type": "button",
+    "handler": "backfillPastPayments()",
+    "roleGate": ["Super Admin", "Administrator", "Director", "Director / Super Admin"],
+    "confirmation": "window.confirm('Backfill past M-Pesa payments into invoices now?')",
+    "dbOperation": "UPDATE re_invoices amount_paid, reconciliation_status, mpesa_receipt_no, mpesa_checkout_request_id, mpesa_last_callback_at",
+    "successToast": "Backfill complete: N/M invoices updated.",
+    "failureToast": "Backfill failed",
+    "refreshBehavior": "fetchData()"
+  },
+  {
+    "id": "RE-MPESA-HDR-BTN-EXPORT",
+    "label": "Export CSV",
+    "page": "M-Pesa Tracker",
+    "type": "button",
+    "handler": "exportCsv()",
+    "behavior": "Generates CSV blob from filtered rows, triggers download",
+    "filename": "mpesa-payment-tracker-[timestamp].csv"
+  },
+  {
+    "id": "RE-MPESA-MODAL-BTN-FORCELINK",
+    "label": "Force Link Payment",
+    "page": "M-Pesa Tracker (event detail modal)",
+    "type": "button",
+    "handler": "forceLinkPayment()",
+    "roleGate": ["Super Admin", "Administrator", "Director", "Director / Super Admin"],
+    "confirmation": "window.confirm('Force link receipt X to invoice Y?')",
+    "dbOperation": "UPDATE re_invoices amount_paid, reconciliation_status, mpesa_receipt_no, mpesa_checkout_request_id, mpesa_last_callback_at",
+    "successToast": "Linked [receipt] to [invoice].",
+    "failureToast": "Failed to force link payment",
+    "refreshBehavior": "fetchData()"
+  },
+  {
+    "id": "RE-RECON-DRILL-BTN-STK",
+    "label": "Send STK Push Now",
+    "page": "Reconciliation",
+    "type": "button",
+    "handler": "handleSendStk()",
+    "service": "callDaraja(stk-push)",
+    "successToast": "STK Push sent successfully.",
+    "failureToast": "Failed to send STK push"
+  },
+  {
+    "id": "RE-RECON-DRILL-BTN-DISBURSE",
+    "label": "Disburse landlord payable",
+    "page": "Reconciliation",
+    "type": "button",
+    "handler": "handleDisburseLandlord()",
+    "service": "callDaraja(b2c-payment-request)",
+    "dbOperation": "INSERT re_finance_ledger (landlord payout entry)",
+    "successToast": "Landlord payout requested for KES N",
+    "failureToast": "Failed to request landlord payout",
+    "refreshBehavior": "fetchData()"
+  }
+]

@@ -1,0 +1,72 @@
+[
+  {
+    "id": "FORM-PROPERTIES",
+    "name": "Add/Edit Property",
+    "component": "Properties.tsx",
+    "trigger": "Add New Property button or card Edit hover",
+    "fieldCount": 48,
+    "sections": ["General Information", "Planned Unit Mix", "Location Details", "Financial Settings", "Utilities & Services", "Communication", "Property Photos", "Inspection Checklist Configuration"],
+    "tables": ["re_properties"],
+    "storageUsed": true,
+    "storageBucket": "property-photos"
+  },
+  {
+    "id": "FORM-UNITS",
+    "name": "Add/Edit Unit",
+    "component": "HousesUnits.tsx + AddUnitPage.tsx",
+    "trigger": "Add New Unit button or Edit row action",
+    "fieldCount": 14,
+    "sections": ["Unit Context", "Utility & Meter Configuration"],
+    "tables": ["re_units"],
+    "dynamicBehavior": "Selecting property shows planned_unit_mix summary; single_room type auto-sets bathrooms=0"
+  },
+  {
+    "id": "FORM-TENANTS",
+    "name": "Onboard/Edit Tenant",
+    "component": "TenantManagement.tsx",
+    "trigger": "Onboard Tenant button or row Edit action",
+    "fieldCount": 19,
+    "sections": ["Personal Info", "Documents", "Unit Assignment", "Lease Terms", "Emergency Contacts"],
+    "tables": ["re_tenants", "re_leases", "re_invoices", "re_units", "profiles"],
+    "storageUsed": true,
+    "storageBuckets": ["leases", "avatars"],
+    "dynamicBehavior": "Selecting property filters unit dropdown; selecting unit auto-fills rent_amount and lease_type"
+  },
+  {
+    "id": "FORM-STK-PUSH",
+    "name": "STK Push",
+    "component": "InvoiceList.tsx",
+    "trigger": "Send STK row action",
+    "fieldCount": 2,
+    "tables": ["re_invoices", "mpesa_stk_request_context"],
+    "externalService": "callDaraja(stk-push)"
+  },
+  {
+    "id": "FORM-RECONCILIATION-STK",
+    "name": "Reconciliation STK + Payout",
+    "component": "HakikaReconciliation.tsx",
+    "trigger": "Invoice drill-down panel",
+    "fieldCount": 2,
+    "tables": ["re_invoices", "re_finance_ledger"],
+    "externalService": "callDaraja(stk-push) + callDaraja(b2c-payment-request)"
+  },
+  {
+    "id": "FORM-AUTO-BILLING",
+    "name": "Auto-Billing Settings",
+    "component": "AutoBilling.tsx",
+    "trigger": "Page load",
+    "fieldCount": 9,
+    "tables": ["re_invoices"],
+    "persistedToLocalStorage": ["hakika_interest_rate", "hakika_interest_mode", "hakika_auto_email", "hakika_auto_sms"]
+  },
+  {
+    "id": "FORM-UNIT-TRANSFER",
+    "name": "Swap Unit (4-step)",
+    "component": "TenantManagement.tsx",
+    "trigger": "Swap Unit row action",
+    "fieldCount": 4,
+    "steps": 4,
+    "tables": ["re_invoices", "re_units"],
+    "rpc": "swap_tenant_unit"
+  }
+]

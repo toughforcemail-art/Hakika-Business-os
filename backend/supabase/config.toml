@@ -1,0 +1,47 @@
+project_id = "upvupkuokinwqwsfxyxy"
+
+[db]
+major_version = 17
+
+[api]
+enabled = true
+schemas = ["public", "graphql_public", "platform", "iam", "billing", "audit", "real_estate", "integrations", "communications"]
+extra_search_path = ["public", "extensions"]
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = []
+jwt_expiry = 3600
+
+[mfa]
+max_enrolled_factors = 10
+
+[mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+[mfa.phone]
+enroll_enabled = false
+verify_enabled = false
+
+[email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+secure_password_change = false
+max_frequency = "1m0s"
+otp_length = 8
+otp_expiry = 3600
+
+[sms]
+enable_signup = true
+enable_confirmations = false
+template = "Your code is {{ .Code }}"
+max_frequency = "5s"
+
+[functions.send-sms]
+verify_jwt = false
+
+[functions.app-mfa]
+verify_jwt = true

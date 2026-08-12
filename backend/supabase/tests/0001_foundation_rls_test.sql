@@ -1,0 +1,12 @@
+begin;
+select plan(8);
+select has_schema('platform');
+select has_schema('iam');
+select has_schema('billing');
+select has_schema('audit');
+select has_table('platform','organizations');
+select has_table('iam','organization_memberships');
+select has_table('audit','events');
+select ok((select relrowsecurity from pg_class where oid='platform.organizations'::regclass), 'organization RLS enabled');
+select * from finish();
+rollback;

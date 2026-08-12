@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Hakika</title>
+  <desc id="desc">Geometric Hakika H monogram in navy, red and blue</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#071a3d" />
+      <stop offset="1" stop-color="#102b61" />
+    </linearGradient>
+    <linearGradient id="red" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff3b3b" />
+      <stop offset="1" stop-color="#d9162b" />
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2e83ed" />
+      <stop offset="1" stop-color="#1452b8" />
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#bg)" />
+  <path d="M14 13h10v14h16V13h10v38H40V37H24v14H14z" fill="#fff" />
+  <path d="M14 13h10v14h6L14 46z" fill="url(#blue)" />
+  <path d="M40 13h10v38H40V27h-6z" fill="url(#red)" />
+  <path d="M24 32h16v5H24z" fill="#fff" opacity=".96" />
+</svg>

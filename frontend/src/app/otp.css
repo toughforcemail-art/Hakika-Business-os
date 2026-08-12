@@ -1,0 +1,12 @@
+.otp-boxes { display:flex; gap:8px; margin-top:8px; }
+.otp-box { width:46px; height:52px; padding:0; border:1px solid #d9e0e9; border-radius:8px; text-align:center; font-size:22px; font-weight:700; color:var(--ink); }
+.otp-box:focus { border-color:var(--blue); box-shadow:0 0 0 3px rgba(49,94,251,.12); outline:none; }
+.launcher-user-label { display:block; color:var(--muted); font-size:11px; }
+.launcher-user-name { display:block; color:var(--ink); font-size:13px; margin:3px 0 12px; max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.launcher-user .button { margin-left:8px; }
+.launcher-user .sign-out-button { margin:12px 0 0 8px; background:#fff; color:#b42318; border:1px solid #f0b8b3; }
+.launcher-user .sign-out-button:hover { background:#fff1f0; }
+.launcher-user { display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
+.launcher-user .button { margin:0; }
+.launcher-user .sign-out-button { margin:0; }
+@media (max-width:800px) { .launcher-user { align-items:flex-start; } }

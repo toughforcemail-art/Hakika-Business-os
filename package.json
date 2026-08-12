@@ -1,0 +1,15 @@
+{
+  "name": "hakika-business-os",
+  "private": true,
+  "workspaces": ["frontend"],
+  "engines": { "node": "22.x", "npm": ">=10" },
+  "scripts": {
+    "dev": "npm run dev --workspace frontend",
+    "build": "npm run build --workspace frontend",
+    "lint": "npm run lint --workspace frontend",
+    "typecheck": "npm run typecheck --workspace frontend",
+    "test": "npm test --workspace frontend",
+    "check": "npm run lint && npm run typecheck",
+    "db:dry-run": "npm run db:dry-run --prefix backend"
+  }
+}

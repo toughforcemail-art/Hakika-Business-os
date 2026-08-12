@@ -1,0 +1,4 @@
+"use client";
+import { useState } from "react";
+import { archiveAsset, archiveProperty, archiveUnit } from "../actions";
+export function ArchiveButton({ type, id, unitId }: { type: "property"|"unit"|"asset"; id: string; unitId?: string }) { const [message,setMessage]=useState(""); const [busy,setBusy]=useState(false); return <><button className="re-button danger" type="button" disabled={busy} onClick={async()=>{if(!window.confirm("Archive this record? It will be removed from active directories.")) return; setBusy(true); const result=type==="property"?await archiveProperty(id):type==="unit"?await archiveUnit(id):await archiveAsset(id,unitId!); setBusy(false); if(result?.errors) setMessage(Object.values(result.errors).join(" · "));}}>{busy?"Archiving…":"Archive"}</button>{message&&<span className="re-form-error" role="alert">{message}</span>}</> }
