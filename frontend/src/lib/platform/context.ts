@@ -59,7 +59,10 @@ export async function getPlatformContext(options: { applicationKey: ApplicationK
     supabase.schema("iam").from("organization_memberships").select("id, organization_id, joined_at").eq("user_id", authContext.userId).eq("status", "active").order("joined_at", { ascending: true }),
     supabase.schema("platform").from("applications").select("id, application_key, status").eq("application_key", options.applicationKey).eq("status", "active").maybeSingle(),
   ]);
-  if (membershipsResult.error || !membershipsResult.data?.length) throw new PlatformContextError("ORGANIZATION_ACCESS_DENIED", "No active organization membership is available.");
+  if (membershipsResult.error || !membershipsResult.data?.length) {
+    console.error("[platform.context] membership lookup failed", { userId: authContext.userId, code: membershipsResult.error?.code, message: membershipsResult.error?.message });
+    throw new PlatformContextError("ORGANIZATION_ACCESS_DENIED", "No active organization membership is available. If you are a platform operator, apply the platform context visibility migration and sign in again.");
+  }
   if (applicationsResult.error || !applicationsResult.data) throw new PlatformContextError("APPLICATION_ACCESS_DENIED", "Application context is unavailable.");
   const storedOrg = await readSelection(ORG_COOKIE);
   const requestedOrg = options.selectedOrganizationId ?? storedOrg;

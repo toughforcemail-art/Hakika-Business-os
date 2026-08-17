@@ -6,6 +6,7 @@ import { supabase } from '../../utils/supabase';
 import { MODULES } from '../../constants';
 import { invokeEdgeFunction } from '../../utils/edgeFunctions';
 import { formatPhoneInput, normalizePhoneNumber } from '../../utils/phoneNumbers';
+import { KENYAN_BANKS, branchesForKenyanBank } from '../../data/kenyanBanks';
 
 const DEFAULT_ROLE_OPTIONS = [
   'Hakika Admin',
@@ -269,7 +270,10 @@ const AddEmployee: React.FC = () => {
       }
 
       setModules([...new Set([...DEFAULT_MODULE_ACCESS, ...(modRes.data ?? []).map(m => m.name)])]);
-      if (bankRes.data) setBanks(bankRes.data);
+      // Keep the database as the source for customer-specific additions, but
+      // never leave payroll onboarding with an empty bank selector when the
+      // optional legacy `banks` table has not been seeded.
+      setBanks((bankRes.data && bankRes.data.length > 0) ? bankRes.data : KENYAN_BANKS);
     } catch (error) {
       console.error('Error fetching data:', error);
       setDepartments(['Real Estate', 'Property Management', 'HR', 'Finance', 'Security', 'IT', 'Operations']);
@@ -388,7 +392,7 @@ const AddEmployee: React.FC = () => {
           bank_name: formData.bankName,
           branch_code: formData.branchCode || null,
           account_number: formData.accountNumber,
-          bank_branch: formData.bankBranch || null,
+          bank_branch: (formData.bankBranch === 'Other' ? formData.otherBankBranch : formData.bankBranch) || null,
           pwd_status: formData.pwdStatus === 'Yes',
           chronic_condition: formData.chronicCondition === 'Other' ? formData.chronicConditionOther : formData.chronicCondition,
           medical_notes: formData.medicalNotes || null,
@@ -707,7 +711,20 @@ const AddEmployee: React.FC = () => {
                   </div>
                 )}
               </div>
-              <InputField label="Branch Name" field="bankBranch" placeholder="e.g., Nairobi Branch" formData={formData} errors={errors} onChange={handleInputChange} />
+                <div className="space-y-1.5">
+                  <label htmlFor="bank-branch" className="text-xs font-medium text-gray-700 dark:text-gray-300">Branch Name</label>
+                  <select
+                    id="bank-branch"
+                    value={formData.bankBranch}
+                    onChange={(e) => handleInputChange('bankBranch', e.target.value)}
+                    className="w-full bg-white dark:bg-[#0A1628] border border-gray-300 dark:border-[#1e293b] px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-900 dark:text-white"
+                  >
+                    <option value="">Select branch</option>
+                    {branchesForKenyanBank(formData.bankName).map((branch) => <option key={branch} value={branch}>{branch}</option>)}
+                    <option value="Other">Other branch</option>
+                  </select>
+                  {formData.bankBranch === 'Other' && <input value={formData.otherBankBranch || ''} onChange={(e) => handleInputChange('otherBankBranch', e.target.value)} placeholder="Enter branch name" className="mt-2 w-full bg-white dark:bg-[#0A1628] border border-gray-300 dark:border-[#1e293b] px-3 py-2 rounded-lg text-sm text-gray-900 dark:text-white" />}
+                </div>
             </div>
             <InputField label="Account Number" field="accountNumber" required placeholder="1122334455" formData={formData} errors={errors} onChange={handleInputChange} />
           </div>

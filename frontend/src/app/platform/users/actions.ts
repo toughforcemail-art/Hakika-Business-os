@@ -11,11 +11,8 @@ async function applicationOrigin() {
   if (configured && !configured.includes("localhost") && !configured.includes("127.0.0.1")) return configured;
   const requestHeaders = await headers();
   const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host");
-  if (host) {
-    const protocol = requestHeaders.get("x-forwarded-proto") || (process.env.NODE_ENV === "production" ? "https" : "http");
-    return `${protocol}://${host}`;
-  }
-  return configured || "http://localhost:3000";
+  if (host && !host.includes("localhost") && !host.startsWith("127.0.0.1")) return `https://${host}`;
+  return "https://hakika-business-os-frontend.vercel.app";
 }
 const friendlyWriteError = (error: { code?: string; message?: string } | null, fallback: string) => {
   if (error?.code === "42501" || error?.message?.toLowerCase().includes("row-level security")) return "This invitation could not be saved because your platform access policy is not enabled yet. Apply the latest Supabase migration, then try again.";
