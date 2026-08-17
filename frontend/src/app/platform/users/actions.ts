@@ -1,10 +1,22 @@
 "use server";
 
 import { createHash, randomBytes } from "node:crypto";
+import { headers } from "next/headers";
 import { requireApplicationContext } from "@/lib/platform/context";
 import { getSupabasePublicConfig } from "@/lib/supabase/config";
 
 const value = (form: FormData, key: string) => String(form.get(key) ?? "").trim();
+async function applicationOrigin() {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
+  if (configured && !configured.includes("localhost") && !configured.includes("127.0.0.1")) return configured;
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host");
+  if (host) {
+    const protocol = requestHeaders.get("x-forwarded-proto") || (process.env.NODE_ENV === "production" ? "https" : "http");
+    return `${protocol}://${host}`;
+  }
+  return configured || "http://localhost:3000";
+}
 const friendlyWriteError = (error: { code?: string; message?: string } | null, fallback: string) => {
   if (error?.code === "42501" || error?.message?.toLowerCase().includes("row-level security")) return "This invitation could not be saved because your platform access policy is not enabled yet. Apply the latest Supabase migration, then try again.";
   if (error?.code === "23505") return "An active invitation already exists for this recipient. Revoke it or wait for it to expire before sending another.";
@@ -51,7 +63,7 @@ export async function inviteOrganizationDirector(_previous: any, form: FormData)
   const assignmentRows = applications.map((application: any) => ({ organization_id: organizationId, invitation_id: invitation.id, application_id: application.id, role_id: roleId }));
   const assignments = await ctx.supabase.schema("iam").from("invitation_role_assignments").insert(assignmentRows);
   if (assignments.error) return { error: friendlyWriteError(assignments.error, "The invitation was created, but its application access could not be assigned. Please try again or contact an administrator.") };
-  const origin = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const origin = await applicationOrigin();
   const inviteUrl = `${origin}/accept-invitation?token=${rawToken}`;
   let delivery: Record<string, string> = {};
   let deliveryWarning = "";
@@ -78,12 +90,12 @@ export async function resendOrganizationInvitation(_previous: any, form: FormDat
   const { error: updateError } = await ctx.supabase.schema("iam").from("invitations").update({ token_hash: tokenHash, expires_at: expiresAt, status: "pending", delivery_status: "pending", sent_at: null, accepted_by: null, accepted_at: null, invited_by: ctx.userId }).eq("id", invitationId);
   if (updateError) return { error: friendlyWriteError(updateError, "The invitation could not be renewed. Try again shortly.") };
   try {
-    const origin = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    const origin = await applicationOrigin();
     const inviteUrl = `${origin}/accept-invitation?token=${rawToken}`;
     const delivery = await deliverInvitation(ctx, invitationId, inviteUrl);
     return { success: true, delivery };
   } catch (error) {
     console.error("Invitation resend failed", error);
-    return { error: `The invitation was renewed, but ${error instanceof Error ? error.message : "automatic delivery failed"} Copy the new link below or verify the provider configuration.`, inviteUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/accept-invitation?token=${rawToken}` };
+    return { error: `The invitation was renewed, but ${error instanceof Error ? error.message : "automatic delivery failed"} Copy the new link below or verify the provider configuration.`, inviteUrl: `${await applicationOrigin()}/accept-invitation?token=${rawToken}` };
   }
 }
