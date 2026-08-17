@@ -1,3 +1,4 @@
 import { ReHeader } from "@/modules/real-estate/components/Shell";
 import { PropertyForm } from "@/modules/real-estate/components/Forms";
-export default function NewProperty(){return <main className="re-main"><ReHeader eyebrow="Properties" title="Add property" description="Create a property record for the current tenant context."/><PropertyForm/></main>}
+import { getRealEstateTenantContext } from "@/modules/real-estate/services/tenant-context";
+export default async function NewProperty(){const ctx=await getRealEstateTenantContext();const {data}=await ctx.supabase.schema("real_estate").from("properties").select("property_type").eq("organization_id",ctx.organizationId).limit(500);const custom=Array.from(new Set((data??[]).map((x)=>x.property_type).filter((x)=>x && !["residential","commercial","mixed_use","land"].includes(x))));return <main className="re-main"><ReHeader eyebrow="Properties" title="Add property" description="Create a property record for the current tenant context."/><PropertyForm customPropertyTypes={custom}/></main>}

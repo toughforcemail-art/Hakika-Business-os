@@ -1,0 +1,5 @@
+"use server";
+import { revalidatePath } from "next/cache";
+import { requireAuthenticatedUser } from "@/lib/auth/server";
+export type ProfileActionState = { error?: string; success?: string };
+export async function updateProfile(_previousState: ProfileActionState, formData: FormData): Promise<ProfileActionState> { const { supabase, context } = await requireAuthenticatedUser(); const displayName = String(formData.get("display_name") ?? "").trim(); const phone = String(formData.get("phone_e164") ?? "").trim(); const locale = String(formData.get("locale") ?? "en-KE").trim(); if (!displayName) return { error: "Display name is required" }; const { error } = await supabase.schema("iam").rpc("update_own_profile", { p_display_name: displayName, p_phone_e164: phone || null, p_locale: locale || "en-KE" }); if (error) { console.error("[profile.update] failed", { userId: context.userId, code: error.code, message: error.message }); return { error: `Profile could not be updated: ${error.message}` }; } revalidatePath("/settings/profile"); return { success: "Profile saved" }; }

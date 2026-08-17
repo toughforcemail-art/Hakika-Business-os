@@ -1,0 +1,25 @@
+// @ts-nocheck
+import { BarChart3, Bell, Boxes, Building2, CreditCard, HeartPulse, LayoutDashboard, Link2, Settings2, ShieldCheck, Users, Workflow, type LucideIcon } from 'lucide-react';
+
+export type RegistryStatus = 'ACTIVE' | 'PREVIEW' | 'COMING_SOON' | 'DISABLED';
+export type PlatformModule = { id: string; title: string; description: string; icon: LucideIcon; category: string; route: string; featureFlag?: string; permission?: string; badge?: string; status: RegistryStatus; keywords: string[] };
+export type PlatformApplication = { id: string; name: string; description: string; icon: LucideIcon; route: string; productionRoute?: string; status: 'INSTALLED' | 'PREVIEW' | 'COMING_SOON' | 'DISABLED'; keywords: string[] };
+
+export const platformModules: PlatformModule[] = [
+  { id: 'executive', title: 'Executive', description: 'Platform overview', icon: LayoutDashboard, category: 'Platform', route: '/app/platform-preview', status: 'ACTIVE', keywords: ['dashboard', 'overview', 'executive'] },
+  { id: 'analytics', title: 'Analytics', description: 'Executive insights', icon: BarChart3, category: 'Platform', route: '/app/platform-preview/analytics', status: 'PREVIEW', keywords: ['reports', 'metrics', 'insights'] },
+  { id: 'workspace', title: 'Workspace', description: 'Organizations and companies', icon: Building2, category: 'Platform', route: '/app/platform', status: 'PREVIEW', keywords: ['organizations', 'companies', 'members'] },
+  { id: 'identity', title: 'Identity & Access', description: 'Users, roles and permissions', icon: Users, category: 'Platform', route: '/app/platform/identity', status: 'PREVIEW', keywords: ['users', 'roles', 'permissions', 'identity'] },
+  { id: 'governance', title: 'Governance', description: 'Audit and policies', icon: ShieldCheck, category: 'Platform', route: '/app/platform-preview/audit', status: 'PREVIEW', keywords: ['audit', 'policies', 'logs'] },
+  { id: 'billing', title: 'Billing & Licensing', description: 'Plans and licenses', icon: CreditCard, category: 'Platform', route: '/app/platform-preview/billing', status: 'PREVIEW', keywords: ['billing', 'licenses', 'invoices'] },
+  { id: 'applications', title: 'Applications', description: 'Product registry', icon: Boxes, category: 'Platform', route: '/app/platform-preview/applications', badge: '4 Installed', status: 'PREVIEW', keywords: ['apps', 'catalog', 'marketplace', 'flags'] },
+  { id: 'notifications', title: 'Notifications', description: 'Delivery and templates', icon: Bell, category: 'Platform', route: '/app/platform-preview/notifications', badge: '8', status: 'PREVIEW', keywords: ['notifications', 'email', 'sms'] },
+  { id: 'workflows', title: 'Workflows', description: 'Automation administration', icon: Workflow, category: 'Platform', route: '/app/platform-preview/workflows', status: 'PREVIEW', keywords: ['workflow', 'automation', 'designer'] },
+  { id: 'integrations', title: 'Integrations', description: 'Connected services', icon: Link2, category: 'Platform', route: '/app/platform-preview/integrations', status: 'PREVIEW', keywords: ['api', 'keys', 'webhooks', 'integrations'] },
+  { id: 'health', title: 'Platform Health', description: 'Operational status', icon: HeartPulse, category: 'Platform', route: '/app/platform-preview/health', badge: 'Warning', status: 'PREVIEW', keywords: ['health', 'status', 'database'] },
+  { id: 'support', title: 'Support', description: 'Customer support center', icon: ShieldCheck, category: 'Platform', route: '/app/platform-preview/support-center', badge: '12', status: 'PREVIEW', keywords: ['support', 'tickets', 'help'] },
+  { id: 'settings', title: 'Settings', description: 'Platform settings', icon: Settings2, category: 'Platform', route: '/app/platform-preview/settings', status: 'PREVIEW', keywords: ['settings', 'configuration'] },
+];
+
+const app = (id: string, name: string, status: PlatformApplication['status'], keywords: string[] = [], productionRoute?: string) => ({ id, name, description: `${name} application preview`, icon: Boxes, route: `/app/platform-preview/apps/${id}`, productionRoute, status, keywords: [id, name.toLowerCase(), ...keywords] });
+export const platformApplications: PlatformApplication[] = [app('real-estate', 'Real Estate', 'INSTALLED', ['properties', 'tenants'], '/app/real-estate/dashboard'), app('finance', 'Finance', 'INSTALLED', ['payments'], '/app/finance/dashboard'), app('hr', 'HR', 'INSTALLED', ['employees'], '/app/hr/dashboard'), app('toughforce', 'ToughTek', 'INSTALLED', ['security'], '/app/toughforce/dashboard'), app('crm', 'CRM', 'COMING_SOON'), app('inventory', 'Inventory', 'COMING_SOON'), app('fleet', 'Fleet', 'COMING_SOON'), app('church', 'Church', 'COMING_SOON'), app('projects', 'Projects', 'COMING_SOON'), app('lms', 'LMS', 'COMING_SOON'), app('help-desk', 'Help Desk', 'COMING_SOON'), app('hakika-pay', 'Hakika Pay', 'COMING_SOON'), app('procurement', 'Procurement', 'COMING_SOON'), app('visitor-management', 'Visitor Management', 'COMING_SOON'), app('asset-management', 'Asset Management', 'COMING_SOON')];

@@ -9,10 +9,10 @@ export type AccessibleApplication = { key: ApplicationKey; name: string; descrip
 export type WorkspaceContext = { organizationId: string; organizationName: string; companyId: string | null; companyName: string | null };
 
 const catalog: Record<ApplicationKey, Omit<AccessibleApplication, "status" | "trialEndsAt">> = {
-  REAL_ESTATE: { key: "REAL_ESTATE", name: "Hakika Real Estate", description: "Property, tenancy, billing and collections.", logo: "/brands/real-estate/logo.jpg", logoAlt: "Hakika Real Estate logo", href: "/real-estate/dashboard" },
-  HR: { key: "HR", name: "HR", description: "People, attendance, leave and payroll.", logo: "/brands/hr/logo.jpg", logoAlt: "Hakika HR logo", href: "/hr/dashboard" },
-  FINANCE: { key: "FINANCE", name: "Finance", description: "Ledgers, cash, invoices and reporting.", logo: null, logoAlt: "Finance logo is not yet supplied", href: "/finance/dashboard" },
-  TOUGHFORCE: { key: "TOUGHFORCE", name: "ToughForce Security", description: "Guards, sites, rosters and incident operations.", logo: "/brands/toughforce/logo.jpg", logoAlt: "ToughForce Security logo", href: "/toughforce/dashboard" },
+  REAL_ESTATE: { key: "REAL_ESTATE", name: "Real Estate", description: "Property, tenancy, billing and collections.", logo: "/brands/real-estate/logo.jpg", logoAlt: "Real Estate logo", href: "/app/real-estate/dashboard" },
+  HR: { key: "HR", name: "HR", description: "People, attendance, leave and payroll.", logo: "/brands/hr/logo.jpg", logoAlt: "Hakika HR logo", href: "/app/hr/dashboard" },
+  FINANCE: { key: "FINANCE", name: "Finance", description: "Ledgers, cash, invoices and reporting.", logo: null, logoAlt: "Finance logo is not yet supplied", href: "/app/finance/dashboard" },
+  TOUGHFORCE: { key: "TOUGHFORCE", name: "ToughForce", description: "Guards, sites, rosters and incident operations.", logo: "/brands/toughforce/logo.jpg", logoAlt: "ToughForce logo", href: "/app/toughforce/dashboard" },
   PLATFORM_ADMIN: { key: "PLATFORM_ADMIN", name: "Platform Admin", description: "Organizations, subscriptions and platform operations.", logo: null, logoAlt: "Platform Admin logo", href: "/platform/dashboard" },
   CUSTOMER_ADMIN: { key: "CUSTOMER_ADMIN", name: "Customer Admin", description: "People, companies, permissions and workspace settings.", logo: null, logoAlt: "Customer Admin logo", href: "/admin/dashboard" },
 };

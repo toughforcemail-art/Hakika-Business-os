@@ -26,7 +26,15 @@
     "paths": {
       "@/*": [
         "./src/*"
-      ]
+      ],
+      "lucide-react": ["./src/compat/lucide-react"],
+      "react-router-dom": ["./src/compat/react-router-dom"]
+      ,"framer-motion": ["./src/compat/framer-motion"],
+      "@dnd-kit/core": ["./src/compat/dnd-kit-core"],
+      "@dnd-kit/sortable": ["./src/compat/dnd-kit-sortable"],
+      "@dnd-kit/utilities": ["./src/compat/dnd-kit-utilities"],
+      "imagekitio-react": ["./src/compat/imagekitio-react"],
+      "jspdf": ["./src/compat/jspdf"]
     }
   },
   "include": [

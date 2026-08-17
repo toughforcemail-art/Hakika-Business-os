@@ -5,7 +5,7 @@ major_version = 17
 
 [api]
 enabled = true
-schemas = ["public", "graphql_public", "platform", "iam", "billing", "audit", "real_estate", "integrations", "communications"]
+schemas = ["public", "graphql_public", "platform", "iam", "billing", "audit", "real_estate", "integrations", "communications", "finance", "hr"]
 extra_search_path = ["public", "extensions"]
 
 [auth]
@@ -13,6 +13,7 @@ enabled = true
 site_url = "http://localhost:3000"
 additional_redirect_urls = []
 jwt_expiry = 3600
+password_requirements = "lower_upper_letters_digits_symbols"
 
 [mfa]
 max_enrolled_factors = 10
@@ -40,8 +41,14 @@ enable_confirmations = false
 template = "Your code is {{ .Code }}"
 max_frequency = "5s"
 
+[sms.twilio]
+enabled = true
+
 [functions.send-sms]
 verify_jwt = false
 
 [functions.app-mfa]
+verify_jwt = true
+
+[functions.send-invitation]
 verify_jwt = true

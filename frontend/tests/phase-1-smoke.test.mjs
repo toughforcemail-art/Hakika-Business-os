@@ -51,7 +51,7 @@ test("authentication uses safe handoff and preserves recovery routes", () => {
 
 test("root layout is conventional and contains no extension hydration cleanup", () => {
   const layout = readFileSync(join(root, "src", "app", "layout.tsx"), "utf8");
-  assert.match(layout, /<html lang="en"><body>\{children\}<\/body><\/html>/);
+  assert.match(layout, /<html lang="en"><body><ToastProvider>\{children\}<\/ToastProvider><\/body><\/html>/);
   assert.doesNotMatch(layout, /MutationObserver|chrome-extension|suppressHydrationWarning|removeAttribute|beforeInteractive/);
 });
 

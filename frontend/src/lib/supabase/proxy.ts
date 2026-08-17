@@ -35,8 +35,11 @@ export async function updateSupabaseSession(request: NextRequest) {
     },
   });
 
-  const { data, error } = await supabase.auth.getClaims();
-  return { response, claims: error ? null : data?.claims ?? null };
+  // getUser() performs the server-side session check and lets @supabase/ssr
+  // refresh an expiring access token through setAll(). getClaims() only
+  // verifies the JWT and can leave an expired browser session looking logged out.
+  const { data, error } = await supabase.auth.getUser();
+  return { response, claims: error || !data.user ? null : { sub: data.user.id } };
 }
 
 export function redirectWithSupabaseCookies(destination: URL, response: NextResponse) {

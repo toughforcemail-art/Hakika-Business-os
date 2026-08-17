@@ -1,0 +1,3 @@
+export type Employee = { id: string; organization_id: string; company_id: string | null; employee_number: string; first_name: string; middle_name: string | null; last_name: string; display_name: string; email: string | null; phone: string | null; department_id: string | null; designation_id: string | null; employment_type: string; employment_status: string; employment_start_date: string | null; probation_end_date: string | null; profile_image_url: string | null; pwd_status: boolean; portal_access_status: string; archived_at: string | null; };
+
+export function employeeInitials(name: string) { const parts = name.trim().split(/\s+/).filter(Boolean); return parts.length > 1 ? `${parts[0][0]}${parts.at(-1)?.[0] ?? ""}`.toUpperCase() : (parts[0]?.[0] ?? "?").toUpperCase(); }

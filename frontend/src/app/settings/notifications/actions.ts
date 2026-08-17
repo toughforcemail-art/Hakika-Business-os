@@ -1,0 +1,4 @@
+"use server";
+import { revalidatePath } from "next/cache";
+import { requireAuthenticatedUser } from "@/lib/auth/server";
+export async function updateNotificationPreferences(formData: FormData) { const { supabase, context } = await requireAuthenticatedUser(); const value = (name: string) => formData.get(name) === "on"; await supabase.schema("platform").from("notification_preferences").upsert({ user_id: context.userId, in_app_enabled: value("in_app_enabled"), email_enabled: value("email_enabled"), sms_enabled: value("sms_enabled"), security_alerts: true, billing_alerts: value("billing_alerts"), approval_requests: value("approval_requests"), operational_alerts: value("operational_alerts"), product_announcements: value("product_announcements"), updated_at: new Date().toISOString() }); revalidatePath("/settings/notifications"); }

@@ -1,0 +1,352 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --primary: 40 45% 58%;
+  --accent: 40 45% 58%;
+  --sidebar-background: 240 10% 96%;
+  --radius: 0.625rem;
+
+  --leli-orange: #ff6a00;
+  --leli-bg: #f9f9f9;
+  --leli-sidebar: #f3f3f7;
+  --leli-text: #1a1a1a;
+  --leli-text-muted: #4b5563;
+  --leli-active: #e5e5eb;
+  --brand-purple: #ff6a00;
+  
+  --dark-bg: #030712;
+  --dark-surface: #0f172a;
+  --dark-border: rgba(255, 255, 255, 0.06);
+  --dark-text: #f8fafc;
+  --dark-text-muted: #94a3b8;
+  --premium-glass: rgba(15, 23, 42, 0.8);
+  --premium-border: rgba(255, 255, 255, 0.08);
+}
+
+/* Platform Preview uses the production application shell without the temporary product logo. */
+.platform-app-preview img[src*="unnamed-removebg-preview"] {
+  display: none;
+}
+
+.dark {
+  --background: 222 47% 4%;
+  --foreground: 210 40% 98%;
+  --primary: 40 45% 58%;
+  --accent: 40 45% 58%;
+  --sidebar-background: 222 47% 8%;
+}
+
+@layer base {
+  body {
+    @apply bg-white text-black dark:bg-dark-surface dark:text-white;
+    font-family: 'Outfit', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+  }
+
+  select {
+    color-scheme: light;
+  }
+
+  .dark select {
+    color-scheme: dark;
+  }
+
+  option {
+    background-color: white;
+    color: #111827;
+  }
+
+  .dark option {
+    background-color: #0f172a;
+    color: white;
+  }
+}
+
+@layer components {
+  .app-page-shell {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .app-page-shell :is(table) {
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .app-page-shell :is(th, td) {
+    min-width: auto;
+    word-break: normal;
+    overflow-wrap: normal;
+  }
+
+  .app-page-shell :is(.table-wrap, .overflow-table) {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Keep wide management tables usable on smaller screens and make the
+     horizontal affordance visible instead of clipping the action columns. */
+  :is(.overflow-x-auto, .table-wrap, .overflow-table, div:has(> table)) {
+    scrollbar-width: auto;
+    scrollbar-color: rgba(255, 106, 0, 0.75) rgba(148, 163, 184, 0.2);
+  }
+
+  /* Data tables must remain discoverable to mouse-only desktop users. The
+     `:has` selector limits the always-visible track to horizontal containers
+     that actually contain a table; tab bars and chip rows keep their normal
+     auto-scroll behavior. */
+  .app-page-shell :is(.data-table-scroll, .table-wrap, .overflow-table, div:has(> table), .overflow-x-auto:has(> table), .overflow-x-auto:has(table)) {
+    overflow-x: scroll;
+    scrollbar-gutter: stable;
+    overscroll-behavior-x: contain;
+  }
+
+  :is(.overflow-x-auto, .table-wrap, .overflow-table, div:has(> table))::-webkit-scrollbar {
+    height: 10px;
+  }
+
+  :is(.overflow-x-auto, .table-wrap, .overflow-table, div:has(> table))::-webkit-scrollbar-track {
+    background: rgba(148, 163, 184, 0.18);
+    border-radius: 999px;
+  }
+
+  :is(.overflow-x-auto, .table-wrap, .overflow-table, div:has(> table))::-webkit-scrollbar-thumb {
+    background: rgba(255, 106, 0, 0.78);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    border-radius: 999px;
+  }
+
+  .app-page-shell :is(.dashboard-grid, .stats-grid, .cards-grid) {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  @media (min-width: 640px) {
+    .app-page-shell :is(.dashboard-grid, .stats-grid, .cards-grid) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .app-page-shell :is(.dashboard-grid, .stats-grid, .cards-grid) {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .app-page-shell :is(.stack-on-mobile) {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  @media (min-width: 768px) {
+    .app-page-shell :is(.stack-on-mobile) {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+
+  .app-page-shell :is(.page-heading) {
+    font-size: clamp(1.35rem, 2.5vw, 2.25rem);
+    line-height: 1.1;
+  }
+
+  .app-page-shell :is(.page-subheading) {
+    font-size: clamp(0.875rem, 1.6vw, 1rem);
+    line-height: 1.5;
+  }
+
+  /* Premium Glass & Stat Cards */
+  .glass-card {
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+  }
+  .dark .glass-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--dark-border);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  }
+  .stat-card {
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .dark .stat-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--dark-border);
+  }
+  .stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 20px -10px rgba(0, 0, 0, 0.05);
+  }
+  .dark .stat-card:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.8) 100%);
+  }
+
+  .sp-btn-primary {
+    background: linear-gradient(135deg, #ff6a00 0%, #ee5d00 100%);
+    color: white;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(255, 106, 0, 0.2);
+  }
+  .sp-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(255, 106, 0, 0.3);
+  }
+
+  .premium-header {
+    position: fixed;
+    top: 0.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    width: 96%;
+    max-width: 85rem;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.08);
+  }
+  .dark .premium-header {
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Carousel Scrollbar Hide */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.dark {
+  --leli-bg: var(--dark-bg);
+  --leli-sidebar: #0f172a;
+  --leli-text: var(--dark-text);
+  --leli-text-muted: var(--dark-text-muted);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.3);
+  border-radius: 10px;
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+  }
+
+  .mobile-card-surface {
+    border-radius: 1rem;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+  }
+
+  .dark .mobile-card-surface {
+    background: rgba(15, 23, 42, 0.78);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
+  }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Standalone application preview navigation readability. */
+aside.mt-16 {
+  font-size: 1rem;
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+aside.mt-16 * {
+  font-family: inherit;
+}
+
+aside.mt-16 nav button {
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-weight: 400;
+}
+
+aside[class*="mt-16"] nav button {
+  font-weight: 400 !important;
+  font-size: 1rem !important;
+  line-height: 1.5rem !important;
+  letter-spacing: normal;
+}
+
+aside[class*="mt-16"] > div h2,
+aside[class*="mt-16"] > button:first-child {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+aside[class*="mt-16"] nav button.bg-indigo-600 {
+  font-weight: 700 !important;
+}
+
+aside[class*="mt-16"] nav > button:first-child,
+aside[class*="mt-16"] nav button[class*="text-[10px]"] {
+  font-weight: 700 !important;
+}
+
+aside[class*="mt-16"] nav button span {
+  font-size: 0;
+}
+
+aside[class*="mt-16"] nav button span::after {
+  content: '⌄';
+  font-size: 1rem;
+  line-height: 1;
+}
+
+
+aside.mt-16 nav button.text-\[10px\] {
+  font-size: 0.75rem !important;
+  line-height: 1rem !important;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+aside.mt-16 nav > button:first-child {
+  font-weight: 700;
+}
+
+aside.mt-16 > button:first-child {
+  font-size: 0.95rem;
+}

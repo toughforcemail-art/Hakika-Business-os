@@ -1,0 +1,1 @@
+export default function FinanceLoading() { return <main className="workspace-main route-loading" aria-busy="true"><div className="route-loading-heading" /><div className="route-loading-grid">{Array.from({ length: 4 }, (_, index) => <div className="route-loading-card" key={index} />)}</div><div className="route-loading-panel" /></main>; }

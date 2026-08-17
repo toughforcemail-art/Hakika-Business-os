@@ -1,0 +1,2 @@
+import { AppShell } from "@/components/AppShell"; import { requireApplicationContext } from "@/lib/platform/context"; import { EmployeeForm, HrTop, hrGroups } from "@/modules/hr/components";
+export default async function NewEmployee(){await requireApplicationContext("HR"); return <AppShell app="HR" logo="/brands/hr/logo.jpg" alt="Hakika HR logo" groups={hrGroups}><HrTop title="Add Employee" description="Create an employee record without creating a login or password."/><main className="workspace-main"><EmployeeForm/></main></AppShell>}

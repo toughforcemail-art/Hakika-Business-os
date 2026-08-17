@@ -1,0 +1,1 @@
+export default function SettingsLoading() { return <main className="profile-settings-page route-loading" aria-busy="true"><div className="route-loading-heading" /><div className="route-loading-panel route-loading-form" /></main>; }

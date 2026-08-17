@@ -89,9 +89,9 @@ export async function requirePlatformOwner() {
   return result;
 }
 
-export async function hasPlatformSuperAdminAccess() {
+export async function hasPlatformSuperAdminAccess(existing?: { supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>; context: { userId: string } }) {
   try {
-    const result = await requireAuthenticatedUser();
+    const result = existing ?? await requireAuthenticatedUser();
     const { data: organizations } = await result.supabase.schema("platform").from("organizations").select("id").eq("organization_type", "platform_owner").eq("status", "active");
     const organizationIds = (organizations ?? []).map((row) => row.id);
     if (!organizationIds.length) return false;

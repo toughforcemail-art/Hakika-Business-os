@@ -7,7 +7,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
   const session = await updateSupabaseSession(request);
-  const protectedPath = ["/apps", "/admin/", "/platform/", "/real-estate/", "/hr/", "/finance/", "/toughforce/"].some((prefix) => pathname === prefix.slice(0, -1) || pathname.startsWith(prefix));
+  const protectedPath = ["/apps", "/admin/", "/platform/", "/real-estate/", "/tenant/", "/landlord/", "/caretaker/", "/hr/", "/finance/", "/toughforce/"].some((prefix) => pathname === prefix.slice(0, -1) || pathname.startsWith(prefix));
   if (!protectedPath) return session.response;
   if (!session.claims?.sub) {
     const login = new URL("/login", request.url);
