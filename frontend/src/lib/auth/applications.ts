@@ -31,15 +31,16 @@ export async function getAccessibleApplications(selectedOrganizationId?: string,
   if (memberships.error) { console.error("[launcher] membership query failed", memberships.error.code ?? "unknown", memberships.error.message ?? "unknown"); throw new Error("Application access is unavailable"); }
   if (!memberships.data?.length) throw new Error("No active organization membership");
   const membership = memberships.data[0];
-  const [organization, allCompanies, companyMemberships, assignments, subscriptions, applications] = await Promise.all([
+  const [organization, allCompanies, companyMemberships, assignments, subscriptions, applications, organizationRoles] = await Promise.all([
     supabase.schema("platform").from("organizations").select("id, display_name, status").eq("id", membership.organization_id).eq("status", "active").maybeSingle(),
     supabase.schema("platform").from("companies").select("id, name, is_default, created_at").eq("organization_id", membership.organization_id).eq("status", "active").order("is_default", { ascending: false }).order("created_at", { ascending: true }),
     supabase.schema("iam").from("company_memberships").select("company_id, status").eq("organization_membership_id", membership.id).eq("organization_id", membership.organization_id).eq("status", "active"),
     supabase.schema("iam").from("member_app_roles").select("application_id, company_id, valid_from, valid_until, role_id").eq("organization_id", membership.organization_id).eq("organization_membership_id", membership.id),
     supabase.schema("billing").from("application_subscriptions").select("application_id, status, trial_ends_at").eq("organization_id", membership.organization_id),
     supabase.schema("platform").from("applications").select("id, application_key, status").eq("status", "active"),
+    supabase.schema("iam").from("roles").select("id, role_key, scope").eq("organization_id", membership.organization_id).eq("scope", "organization"),
   ]);
-  const queryError = [organization.error, allCompanies.error, companyMemberships.error, assignments.error, subscriptions.error, applications.error].find(Boolean);
+  const queryError = [organization.error, allCompanies.error, companyMemberships.error, assignments.error, subscriptions.error, applications.error, organizationRoles.error].find(Boolean);
   if (queryError) { console.error("[launcher] access query failed", queryError.code ?? "unknown", queryError.message ?? "unknown"); throw new Error("Application access is unavailable"); }
   if (!organization.data) { console.error("[launcher] active membership organization was not visible"); throw new Error("Application access is unavailable"); }
   const isPlatformSuperAdmin = await hasPlatformSuperAdminAccess();
@@ -52,12 +53,14 @@ export async function getAccessibleApplications(selectedOrganizationId?: string,
   const roleIds = [...new Set(validAssignments.map((assignment) => assignment.role_id))];
   const { data: roles, error: rolesError } = roleIds.length ? await supabase.schema("iam").from("roles").select("id, role_key, scope").in("id", roleIds) : { data: [], error: null };
   if (rolesError) throw new Error("Application access is unavailable");
-  const hasOrganizationDirectorAccess = Boolean((roles ?? []).some((role) => role.scope === "organization" && /director|admin|owner/i.test(role.role_key)));
+  const hasOrganizationDirectorAccess = Boolean((roles ?? []).some((role) => role.scope === "organization" && /director|admin|owner/i.test(role.role_key)) || (organizationRoles.data ?? []).some((role) => /director|admin|owner/i.test(role.role_key)));
   const subscriptionsByApplication = new Map((subscriptions.data ?? []).map((subscription) => [subscription.application_id, subscription]));
   const appsById = new Map((applications.data ?? []).map((application) => [application.id, application]));
   const accessible = isPlatformSuperAdmin
     ? (applications.data ?? []).filter((application) => catalog[application.application_key as ApplicationKey]).map((application) => ({ ...catalog[application.application_key as ApplicationKey], status: "active" as const, trialEndsAt: null }))
-    : validAssignments.map((assignment) => ({ assignment, application: appsById.get(assignment.application_id), subscription: subscriptionsByApplication.get(assignment.application_id) })).filter((item) => item.application && (hasOrganizationDirectorAccess || (item.subscription && isEntitled(item.subscription.status, item.subscription.trial_ends_at)))).map((item) => ({ ...catalog[item.application!.application_key as ApplicationKey], status: item.subscription?.status === "trial" ? "trial" as const : "active" as const, trialEndsAt: item.subscription?.trial_ends_at ?? null }));
+    : hasOrganizationDirectorAccess
+      ? (applications.data ?? []).filter((application) => catalog[application.application_key as ApplicationKey]).map((application) => ({ ...catalog[application.application_key as ApplicationKey], status: "active" as const, trialEndsAt: null }))
+      : validAssignments.map((assignment) => ({ assignment, application: appsById.get(assignment.application_id), subscription: subscriptionsByApplication.get(assignment.application_id) })).filter((item) => item.application && item.subscription && isEntitled(item.subscription.status, item.subscription.trial_ends_at)).map((item) => ({ ...catalog[item.application!.application_key as ApplicationKey], status: item.subscription?.status === "trial" ? "trial" as const : "active" as const, trialEndsAt: item.subscription?.trial_ends_at ?? null }));
   const unique = new Map(accessible.map((application) => [application.key, application]));
   return { context: { organizationId: organization.data.id, organizationName: organization.data.display_name, companyId: company?.id ?? null, companyName: company?.name ?? null }, applications: [...unique.values()] };
 }

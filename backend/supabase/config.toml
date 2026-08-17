@@ -23,8 +23,8 @@ enroll_enabled = true
 verify_enabled = true
 
 [mfa.phone]
-enroll_enabled = false
-verify_enabled = false
+enroll_enabled = true
+verify_enabled = true
 
 [email]
 enable_signup = true

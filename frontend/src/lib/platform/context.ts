@@ -69,23 +69,26 @@ export async function getPlatformContext(options: { applicationKey: ApplicationK
   const platformOwner = isPlatformSuperAdmin ? (await supabase.schema("platform").from("organizations").select("id").eq("organization_type", "platform_owner").eq("status", "active").maybeSingle()).data?.id : null;
   const membership = membershipsResult.data.find((item) => item.organization_id === requestedOrg) ?? (platformOwner ? membershipsResult.data.find((item) => item.organization_id === platformOwner) : null) ?? (membershipsResult.data.length === 1 ? membershipsResult.data[0] : null);
   if (!membership) throw new PlatformContextError("ORGANIZATION_SELECTION_REQUIRED", "Select an organization to continue.");
-  const [organizationResult, companiesResult, companyMembershipsResult, assignmentsResult, subscriptionsResult] = await Promise.all([
+  const [organizationResult, companiesResult, companyMembershipsResult, assignmentsResult, subscriptionsResult, organizationRolesResult] = await Promise.all([
     supabase.schema("platform").from("organizations").select("id, display_name, organization_type, company_scope_mode").eq("id", membership.organization_id).eq("status", "active").maybeSingle(),
     supabase.schema("platform").from("companies").select("id, name, status").eq("organization_id", membership.organization_id).eq("status", "active"),
     supabase.schema("iam").from("company_memberships").select("company_id").eq("organization_membership_id", membership.id).eq("organization_id", membership.organization_id).eq("status", "active"),
     supabase.schema("iam").from("member_app_roles").select("role_id, company_id, valid_from, valid_until").eq("organization_membership_id", membership.id).eq("organization_id", membership.organization_id).eq("application_id", applicationsResult.data.id),
     supabase.schema("billing").from("application_subscriptions").select("status, trial_ends_at").eq("organization_id", membership.organization_id).eq("application_id", applicationsResult.data.id).maybeSingle(),
+    supabase.schema("iam").from("roles").select("id, role_key, scope").eq("organization_id", membership.organization_id).eq("scope", "organization"),
   ]);
   if (organizationResult.error || !organizationResult.data || companiesResult.error || companyMembershipsResult.error || assignmentsResult.error) throw new PlatformContextError("ORGANIZATION_ACCESS_DENIED", "Organization context is unavailable.");
-  const roleIds = [...new Set((assignmentsResult.data ?? []).map((row) => row.role_id))];
+  if (organizationRolesResult.error) throw new PlatformContextError("APPLICATION_ACCESS_DENIED", "Organization role access is unavailable.");
+  const organizationDirectorRoles = (organizationRolesResult.data ?? []).filter((role) => /director|admin|owner/i.test(role.role_key));
+  const roleIds = [...new Set([...(assignmentsResult.data ?? []).map((row) => row.role_id), ...organizationDirectorRoles.map((role) => role.id)])];
   const rolesResult = roleIds.length ? await supabase.schema("iam").from("roles").select("id, role_key, scope").in("id", roleIds) : { data: [], error: null };
   if (rolesResult.error) throw new PlatformContextError("APPLICATION_ACCESS_DENIED", "Role access is unavailable.");
-  const hasOrganizationDirectorAccess = Boolean((rolesResult.data ?? []).some((role) => role.scope === "organization" && /director|admin|owner/i.test(role.role_key)));
+  const hasOrganizationDirectorAccess = Boolean(organizationDirectorRoles.length || (rolesResult.data ?? []).some((role) => role.scope === "organization" && /director|admin|owner/i.test(role.role_key)));
   const subscriptionRequired = options.applicationKey !== "PLATFORM_ADMIN" && options.applicationKey !== "CUSTOMER_ADMIN" && !isPlatformSuperAdmin && !hasOrganizationDirectorAccess;
   if (subscriptionRequired && (!subscriptionsResult.data || !["active", "trial", "grace"].includes(subscriptionsResult.data.status) || (subscriptionsResult.data.status === "trial" && subscriptionsResult.data.trial_ends_at && new Date(subscriptionsResult.data.trial_ends_at).getTime() <= Date.now()))) throw new PlatformContextError("APPLICATION_ACCESS_DENIED", "This application is not active for the organization.");
   const now = Date.now();
   const assignments = (assignmentsResult.data ?? []).filter((row) => (!row.valid_from || new Date(row.valid_from).getTime() <= now) && (!row.valid_until || new Date(row.valid_until).getTime() > now));
-  if (!isPlatformSuperAdmin && !assignments.length) throw new PlatformContextError("APPLICATION_ACCESS_DENIED", "You do not have access to this application.");
+  if (!isPlatformSuperAdmin && !hasOrganizationDirectorAccess && !assignments.length) throw new PlatformContextError("APPLICATION_ACCESS_DENIED", "You do not have access to this application.");
   const permissionIds = roleIds.length ? await supabase.schema("iam").from("role_permissions").select("permission_id").in("role_id", roleIds) : { data: [], error: null };
   const ids = [...new Set((permissionIds.data ?? []).map((row) => row.permission_id))];
   const permissionsResult = ids.length ? await supabase.schema("iam").from("permissions").select("permission_key").in("id", ids) : { data: [], error: null };
