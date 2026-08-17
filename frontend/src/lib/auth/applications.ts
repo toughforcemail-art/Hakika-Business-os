@@ -49,11 +49,15 @@ export async function getAccessibleApplications(selectedOrganizationId?: string,
   if (selectedCompanyId && !company) throw new Error("Company access denied");
   const now = Date.now();
   const validAssignments = (assignments.data ?? []).filter((assignment) => (!assignment.valid_from || new Date(assignment.valid_from).getTime() <= now) && (!assignment.valid_until || new Date(assignment.valid_until).getTime() > now) && (!assignment.company_id || assignment.company_id === company?.id));
+  const roleIds = [...new Set(validAssignments.map((assignment) => assignment.role_id))];
+  const { data: roles, error: rolesError } = roleIds.length ? await supabase.schema("iam").from("roles").select("id, role_key, scope").in("id", roleIds) : { data: [], error: null };
+  if (rolesError) throw new Error("Application access is unavailable");
+  const hasOrganizationDirectorAccess = Boolean((roles ?? []).some((role) => role.scope === "organization" && /director|admin|owner/i.test(role.role_key)));
   const subscriptionsByApplication = new Map((subscriptions.data ?? []).map((subscription) => [subscription.application_id, subscription]));
   const appsById = new Map((applications.data ?? []).map((application) => [application.id, application]));
   const accessible = isPlatformSuperAdmin
     ? (applications.data ?? []).filter((application) => catalog[application.application_key as ApplicationKey]).map((application) => ({ ...catalog[application.application_key as ApplicationKey], status: "active" as const, trialEndsAt: null }))
-    : validAssignments.map((assignment) => ({ assignment, application: appsById.get(assignment.application_id), subscription: subscriptionsByApplication.get(assignment.application_id) })).filter((item) => item.application && item.subscription && isEntitled(item.subscription.status, item.subscription.trial_ends_at)).map((item) => ({ ...catalog[item.application!.application_key as ApplicationKey], status: item.subscription!.status === "trial" ? "trial" as const : "active" as const, trialEndsAt: item.subscription!.trial_ends_at }));
+    : validAssignments.map((assignment) => ({ assignment, application: appsById.get(assignment.application_id), subscription: subscriptionsByApplication.get(assignment.application_id) })).filter((item) => item.application && (hasOrganizationDirectorAccess || (item.subscription && isEntitled(item.subscription.status, item.subscription.trial_ends_at)))).map((item) => ({ ...catalog[item.application!.application_key as ApplicationKey], status: item.subscription?.status === "trial" ? "trial" as const : "active" as const, trialEndsAt: item.subscription?.trial_ends_at ?? null }));
   const unique = new Map(accessible.map((application) => [application.key, application]));
   return { context: { organizationId: organization.data.id, organizationName: organization.data.display_name, companyId: company?.id ?? null, companyName: company?.name ?? null }, applications: [...unique.values()] };
 }

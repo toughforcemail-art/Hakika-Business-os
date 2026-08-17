@@ -77,19 +77,21 @@ export async function getPlatformContext(options: { applicationKey: ApplicationK
     supabase.schema("billing").from("application_subscriptions").select("status, trial_ends_at").eq("organization_id", membership.organization_id).eq("application_id", applicationsResult.data.id).maybeSingle(),
   ]);
   if (organizationResult.error || !organizationResult.data || companiesResult.error || companyMembershipsResult.error || assignmentsResult.error) throw new PlatformContextError("ORGANIZATION_ACCESS_DENIED", "Organization context is unavailable.");
-  const subscriptionRequired = options.applicationKey !== "PLATFORM_ADMIN" && options.applicationKey !== "CUSTOMER_ADMIN" && !isPlatformSuperAdmin;
+  const roleIds = [...new Set((assignmentsResult.data ?? []).map((row) => row.role_id))];
+  const rolesResult = roleIds.length ? await supabase.schema("iam").from("roles").select("id, role_key, scope").in("id", roleIds) : { data: [], error: null };
+  if (rolesResult.error) throw new PlatformContextError("APPLICATION_ACCESS_DENIED", "Role access is unavailable.");
+  const hasOrganizationDirectorAccess = Boolean((rolesResult.data ?? []).some((role) => role.scope === "organization" && /director|admin|owner/i.test(role.role_key)));
+  const subscriptionRequired = options.applicationKey !== "PLATFORM_ADMIN" && options.applicationKey !== "CUSTOMER_ADMIN" && !isPlatformSuperAdmin && !hasOrganizationDirectorAccess;
   if (subscriptionRequired && (!subscriptionsResult.data || !["active", "trial", "grace"].includes(subscriptionsResult.data.status) || (subscriptionsResult.data.status === "trial" && subscriptionsResult.data.trial_ends_at && new Date(subscriptionsResult.data.trial_ends_at).getTime() <= Date.now()))) throw new PlatformContextError("APPLICATION_ACCESS_DENIED", "This application is not active for the organization.");
   const now = Date.now();
   const assignments = (assignmentsResult.data ?? []).filter((row) => (!row.valid_from || new Date(row.valid_from).getTime() <= now) && (!row.valid_until || new Date(row.valid_until).getTime() > now));
   if (!isPlatformSuperAdmin && !assignments.length) throw new PlatformContextError("APPLICATION_ACCESS_DENIED", "You do not have access to this application.");
-  const roleIds = [...new Set(assignments.map((row) => row.role_id))];
-  const rolesResult = roleIds.length ? await supabase.schema("iam").from("roles").select("id, role_key, scope").in("id", roleIds) : { data: [], error: null };
   const permissionIds = roleIds.length ? await supabase.schema("iam").from("role_permissions").select("permission_id").in("role_id", roleIds) : { data: [], error: null };
   const ids = [...new Set((permissionIds.data ?? []).map((row) => row.permission_id))];
   const permissionsResult = ids.length ? await supabase.schema("iam").from("permissions").select("permission_key").in("id", ids) : { data: [], error: null };
   if (rolesResult.error || permissionIds.error || permissionsResult.error) throw new PlatformContextError("APPLICATION_ACCESS_DENIED", "Role access is unavailable.");
   const permissions = new Set((permissionsResult.data ?? []).map((row) => row.permission_key));
-  const isOrganizationAdmin = Boolean((rolesResult.data ?? []).some((role) => role.scope === "organization" && /admin|owner/i.test(role.role_key)) || permissions.has("admin.organizations.manage") || permissions.has("admin.members.invite"));
+  const isOrganizationAdmin = Boolean(hasOrganizationDirectorAccess || permissions.has("admin.organizations.manage") || permissions.has("admin.members.invite"));
   const mode = (options.companyScopeMode ?? organizationResult.data.company_scope_mode ?? "organization_only") as CompanyScopeMode;
   const assignedCompanyIds = new Set((companyMembershipsResult.data ?? []).map((row) => row.company_id));
   const selectedCompany = options.selectedCompanyId ?? await readSelection(COMPANY_COOKIE);
