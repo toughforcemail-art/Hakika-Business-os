@@ -18,7 +18,7 @@ async function deliverInvitation(ctx: any, invitationId: string, inviteUrl: stri
   const { url, publishableKey } = getSupabasePublicConfig();
   const response = await fetch(`${url}/functions/v1/send-invitation`, { method: "POST", headers: { apikey: publishableKey, Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" }, body: JSON.stringify({ invitationId, inviteUrl }), cache: "no-store" });
   const result = await response.json().catch(() => ({})) as { results?: Record<string, string>; error?: string };
-  if (!response.ok) throw new Error(result.error || "Automatic delivery failed.");
+  if (!response.ok) { const failedChannels = Object.entries(result.results ?? {}).filter(([, status]) => status === "failed").map(([channel]) => channel).join(" and "); throw new Error(failedChannels ? `${failedChannels} delivery failed.` : (result.error || "Automatic delivery failed.")); }
   return result.results ?? {};
 }
 
@@ -79,10 +79,11 @@ export async function resendOrganizationInvitation(_previous: any, form: FormDat
   if (updateError) return { error: friendlyWriteError(updateError, "The invitation could not be renewed. Try again shortly.") };
   try {
     const origin = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-    const delivery = await deliverInvitation(ctx, invitationId, `${origin}/accept-invitation?token=${rawToken}`);
+    const inviteUrl = `${origin}/accept-invitation?token=${rawToken}`;
+    const delivery = await deliverInvitation(ctx, invitationId, inviteUrl);
     return { success: true, delivery };
   } catch (error) {
     console.error("Invitation resend failed", error);
-    return { error: "The invitation was renewed, but automatic delivery failed." };
+    return { error: `The invitation was renewed, but ${error instanceof Error ? error.message : "automatic delivery failed"} Copy the new link below or verify the provider configuration.`, inviteUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/accept-invitation?token=${rawToken}` };
   }
 }

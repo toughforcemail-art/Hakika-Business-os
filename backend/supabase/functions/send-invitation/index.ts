@@ -12,13 +12,13 @@ async function callerId(request: Request) {
   if (!token) throw new Error("unauthorized");
   const { payload } = await jwtVerify(token, jwks, { issuer: `${supabaseUrl()}/auth/v1`, audience: "authenticated" });
   if (typeof payload.sub !== "string") throw new Error("unauthorized");
-  return payload.sub;
+  return { token, userId: payload.sub };
 }
 
-async function adminRest(path: string, options: RequestInit = {}, schema = "iam") {
-  const key = env("SUPABASE_SERVICE_ROLE_KEY");
+async function scopedRest(token: string, path: string, options: RequestInit = {}, schema = "iam") {
+  const key = env("SUPABASE_PUBLISHABLE_KEY") || env("SUPABASE_ANON_KEY");
   if (!key) throw new Error("service configuration");
-  const response = await fetch(`${supabaseUrl()}/rest/v1/${path}`, { ...options, headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json", "Accept-Profile": schema, "Content-Profile": schema, ...options.headers } });
+  const response = await fetch(`${supabaseUrl()}/rest/v1/${path}`, { ...options, headers: { apikey: key, Authorization: `Bearer ${token}`, "Content-Type": "application/json", "Accept-Profile": schema, "Content-Profile": schema, ...options.headers } });
   if (!response.ok) throw new Error(`database_${response.status}`);
   return response.status === 204 ? null : response.json();
 }
@@ -47,23 +47,23 @@ async function sendSms(to: string, inviteUrl: string, organizationName: string) 
 
 export async function handleRequest(request: Request) {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
-  let userId: string;
-  try { userId = await callerId(request); } catch { return json({ error: "Authentication required" }, 401); }
+  let caller: { token: string; userId: string };
+  try { caller = await callerId(request); } catch { return json({ error: "Authentication required" }, 401); }
   const body = await request.json().catch(() => ({}));
   const invitationId = typeof body.invitationId === "string" ? body.invitationId : "";
   const inviteUrl = typeof body.inviteUrl === "string" ? body.inviteUrl : "";
   if (!invitationId || !inviteUrl) return json({ error: "Invitation details are required" }, 400);
   try {
-    const rows = await adminRest(`invitations?id=eq.${encodeURIComponent(invitationId)}&select=id,organization_id,invited_by,email,phone,status,expires_at`, {}, "iam") as { id: string; organization_id: string; invited_by: string; email: string | null; phone: string | null; status: string; expires_at: string }[];
+    const rows = await scopedRest(caller.token, `invitations?id=eq.${encodeURIComponent(invitationId)}&select=id,organization_id,invited_by,email,phone,status,expires_at`, {}, "iam") as { id: string; organization_id: string; invited_by: string; email: string | null; phone: string | null; status: string; expires_at: string }[];
     const invitation = rows[0];
-    if (!invitation || invitation.invited_by !== userId || invitation.status !== "pending" || new Date(invitation.expires_at).getTime() <= Date.now()) return json({ error: "Invitation is no longer deliverable" }, 400);
-    const organizations = await adminRest(`organizations?id=eq.${encodeURIComponent(invitation.organization_id)}&select=display_name`, {}, "platform") as { display_name: string }[];
+    if (!invitation || invitation.status !== "pending" || new Date(invitation.expires_at).getTime() <= Date.now()) return json({ error: "Invitation is no longer deliverable" }, 400);
+    const organizations = await scopedRest(caller.token, `organizations?id=eq.${encodeURIComponent(invitation.organization_id)}&select=display_name`, {}, "platform") as { display_name: string }[];
     const organizationName = organizations[0]?.display_name || "your organization";
     const results: Record<string, string> = {};
     if (invitation.email) { try { await sendEmail(invitation.email, inviteUrl, organizationName); results.email = "sent"; } catch { results.email = "failed"; } }
     if (invitation.phone) { try { await sendSms(invitation.phone, inviteUrl, organizationName); results.sms = "sent"; } catch { results.sms = "failed"; } }
     const delivered = Object.values(results).some((value) => value === "sent");
-    await adminRest(`invitations?id=eq.${encodeURIComponent(invitationId)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ delivery_status: delivered ? "sent" : "failed", sent_at: delivered ? new Date().toISOString() : null }) }, "iam");
+    await scopedRest(caller.token, `invitations?id=eq.${encodeURIComponent(invitationId)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ delivery_status: delivered ? "sent" : "failed", sent_at: delivered ? new Date().toISOString() : null }) }, "iam");
     return json({ ok: delivered, results }, delivered ? 200 : 502);
   } catch (error) { console.error("send-invitation failed", error); return json({ error: "Invitation delivery failed" }, 502); }
 }
