@@ -1,14 +1,6 @@
-"use client";
-
-import Link from "next/link";
-import { FormEvent, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-
-async function sha256(value: string) { const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)); return [...new Uint8Array(bytes)].map((byte) => byte.toString(16).padStart(2, "0")).join(""); }
+import { Suspense } from "react";
+import AcceptInvitationForm from "./AcceptInvitationForm";
 
 export default function AcceptInvitationPage() {
-  const params = useSearchParams(); const token = params.get("token") || ""; const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [status, setStatus] = useState(""); const [error, setError] = useState("");
-  async function submit(event: FormEvent) { event.preventDefault(); setError(""); setStatus("Creating your secure account…"); if (!token) { setError("This invitation link is missing its token."); return; } const supabase = createSupabaseBrowserClient(); const result = await supabase.auth.signUp({ email, password }); if (result.error) { setError(result.error.message); setStatus(""); return; } if (!result.data.session) { setStatus("Account created. Confirm your email, then sign in to finish joining the organization."); return; } const accepted = await supabase.rpc("accept_invitation", { invitation_token_hash: await sha256(token) }); if (accepted.error) { setError(accepted.error.message); setStatus(""); return; } window.location.href = "/auth/verify?channel=email&next=%2Fapps"; }
-  return <main className="auth-page"><section className="auth-panel"><Link href="/" className="wordmark">hakika<span>.</span></Link><div className="auth-card card"><div className="eyebrow">Organization invitation</div><h1>Set up your access</h1><p className="auth-lede">Create your own password to join the assigned organization applications. Hakika never sends passwords by email or SMS.</p><form onSubmit={submit}><label>Email address</label><input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email"/><label>Password</label><input type="password" required minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password"/><button className="button primary auth-submit" type="submit">Create account</button></form>{status && <p role="status">{status}</p>}{error && <p className="auth-error" role="alert">{error}</p>}<p className="auth-security">After account setup, the normal login verification and SMS step-up flow remains active.</p></div><Link href="/login" className="back-link">Already have an account? Sign in</Link></section></main>;
+  return <Suspense fallback={<main className="auth-page"><section className="auth-panel"><div className="auth-card card"><p>Loading invitation…</p></div></section></main>}><AcceptInvitationForm /></Suspense>;
 }
