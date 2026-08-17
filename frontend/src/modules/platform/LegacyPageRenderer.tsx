@@ -1,27 +1,26 @@
 "use client";
 
-import { lazy, Suspense, type ComponentType } from "react";
+import { Suspense, type ComponentType } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { AccessProvider } from "@/legacy/hr/context/AccessContext";
+import { pageLoaders } from "@/modules/page-loaders";
+import { originalRouteToSlug } from "@/modules/original-route-map";
 
-type LegacyLoader = () => Promise<{ default: ComponentType<any> }>;
-const loaders: Record<string, LegacyLoader> = {
-  
-  "hr/employees": () => import("@/legacy/hr/pages/hr/TotalEmployees"), "hr/employees/add": () => import("@/legacy/hr/pages/hr/AddEmployee"), "hr/total-employees": () => import("@/legacy/hr/pages/hr/TotalEmployees"), "hr/past-employees": () => import("@/legacy/hr/pages/hr/PastEmployees"), "hr/departments": () => import("@/legacy/hr/pages/hr/Departments"), "hr/designations": () => import("@/legacy/hr/pages/hr/Designations"), "hr/modules": () => import("@/legacy/hr/pages/hr/Modules"), "hr/companies": () => import("@/legacy/hr/pages/hr/Companies"),
-  "hr/leave": () => import("@/legacy/hr/pages/hr/LeaveManagement"), "hr/leave/apply": () => import("@/legacy/hr/pages/hr/ApplyForLeave"), "hr/leave/approvals": () => import("@/legacy/hr/pages/hr/LeaveApprovals"), "hr/leave-types": () => import("@/legacy/hr/pages/hr/LeaveTypesManagement"), "hr/my-leave": () => import("@/legacy/hr/pages/hr/MyLeave"), "hr/my-leave-requests": () => import("@/legacy/hr/pages/hr/MyLeaveRequests"),
-  "hr/payroll": () => import("@/legacy/hr/pages/hr/PayrollOverview"), "hr/payroll/process": () => import("@/legacy/hr/pages/hr/PayrollOverview"), "hr/my-payroll": () => import("@/legacy/hr/pages/hr/MyPayroll"), "hr/payroll/paye-csv": () => import("@/legacy/hr/pages/hr/PayeCsvBuilder"), "hr/payroll/p9a": () => import("@/legacy/hr/pages/hr/P9AForm"), "hr/payroll/deductions-test": () => import("@/legacy/hr/pages/hr/PayrollDeductionsTest"), "hr/salary-advances": () => import("@/legacy/hr/pages/hr/SalaryAdvances"), "hr/salary-advances/approvals": () => import("@/legacy/hr/pages/hr/SalaryAdvanceApprovals"), "hr/statutory-returns": () => import("@/legacy/hr/pages/hr/StatutoryReturns"),
-  "hr/recruitment": () => import("@/legacy/hr/pages/hr/Recruitment"), "hr/disciplinary": () => import("@/legacy/hr/pages/hr/DisciplinaryCases"), "hr/documents": () => import("@/legacy/hr/pages/hr/DocumentExpiry"), "hr/employee-credentials": () => import("@/legacy/hr/pages/hr/EmployeeCredentials"), "hr/assets": () => import("@/legacy/hr/pages/hr/AssetTracking"), "hr/assets/add": () => import("@/legacy/hr/pages/hr/AddAsset"), "hr/expenses": () => import("@/legacy/hr/pages/hr/ExpenseReports"),
-  "real-estate/properties": () => import("@/legacy/real-estate/pages/real-estate/Properties"), "real-estate/units": () => import("@/legacy/real-estate/pages/real-estate/HousesUnits"), "real-estate/tenants": () => import("@/legacy/real-estate/pages/real-estate/TenantManagement"), "real-estate/invoices": () => import("@/legacy/real-estate/pages/real-estate/InvoiceList"), "real-estate/payments": () => import("@/legacy/real-estate/pages/real-estate/ManualPayments"), "real-estate/arrears": () => import("@/legacy/real-estate/pages/real-estate/ArrearsManagement"), "real-estate/maintenance": () => import("@/legacy/real-estate/pages/real-estate/MaintenanceRequest"), "real-estate/leases": () => import("@/legacy/real-estate/pages/real-estate/DigitalLeases"), "real-estate/landlords": () => import("@/legacy/real-estate/pages/real-estate/LandlordsManagement"), "real-estate/caretakers": () => import("@/legacy/real-estate/pages/real-estate/CaretakersManagement"), "real-estate/assets": () => import("@/legacy/real-estate/pages/real-estate/AssetInventory"), "real-estate/reports": () => import("@/legacy/real-estate/pages/real-estate/ExpenseReport"),
-  "toughforce/guards": () => import("@/legacy/toughforce/pages/security/GuardDatabase"), "toughforce/locations": () => import("@/legacy/toughforce/pages/security/LocationsManagement"), "toughforce/roster": () => import("@/legacy/toughforce/pages/security/RosterManagement"), "toughforce/attendance": () => import("@/legacy/toughforce/pages/security/AttendanceMaster"), "toughforce/incidents": () => import("@/legacy/toughforce/pages/security/IncidentReporting"), "toughforce/patrols": () => import("@/legacy/toughforce/pages/security/PatrolTracking"), "toughforce/cctv": () => import("@/legacy/toughforce/pages/security/CctvSurveillance"), "toughforce/assets": () => import("@/legacy/toughforce/pages/security/AssetManagement"), "toughforce/billing": () => import("@/legacy/toughforce/pages/security/SecurityBilling"), "toughforce/recommendations": () => import("@/legacy/toughforce/pages/security/SecurityRecommendations"),
-  "finance/accounts": () => import("@/legacy/finance/pages/finance/GlobalLedger"), "finance/bank-accounts": () => import("@/legacy/finance/pages/finance/BankAccounts"), "finance/bank-connections": () => import("@/legacy/finance/pages/finance/BankConnections"), "finance/payments": () => import("@/legacy/finance/pages/finance/FinancePayments"), "finance/receipts": () => import("@/legacy/finance/pages/finance/Receipts"), "finance/invoices": () => import("@/legacy/finance/pages/finance/InvoicingCenter"), "finance/requisitions": () => import("@/legacy/finance/pages/finance/FinanceRequisitions"), "finance/requisition-approvals": () => import("@/legacy/finance/pages/finance/FinanceRequisitionApprovals"), "finance/payment-vouchers": () => import("@/legacy/finance/pages/finance/FinancePaymentVouchers"), "finance/wallets": () => import("@/legacy/finance/pages/finance/FinanceWallets"), "finance/ledger": () => import("@/legacy/finance/pages/finance/GlobalLedgerEnhanced"), "finance/reconciliation": () => import("@/legacy/finance/pages/finance/Reconciliation"), "finance/tax": () => import("@/legacy/finance/pages/finance/TaxReturns"), "finance/payees": () => import("@/legacy/finance/pages/finance/FinancePayeeManager"), "finance/payment-options": () => import("@/legacy/finance/pages/finance/FinancePaymentOptions"), "finance/cost-centres": () => import("@/legacy/finance/pages/finance/FinanceCostCentres"), "finance/expense-groups": () => import("@/legacy/finance/pages/finance/FinanceExpenseGroups"), "finance/reports": () => import("@/legacy/finance/pages/finance/FinanceExpenseReport"), "finance/audit": () => import("@/legacy/finance/pages/finance/AuditTrail"),
-};
+function pageKey(module: string, section: string[]) {
+  return module === "toughforce" ? "toughforce" : module;
+}
 
-function loaderKey(module: string, section: string[]) { return `${module}/${section.join("/")}`; }
-export function hasLegacyPage(module: string, section: string[]) { return Boolean(loaders[loaderKey(module, section)]); }
+function loaderSlug(module: string, section: string[]) {
+  const route = `/app/${module}/${section.join("/")}`;
+  return originalRouteToSlug[module]?.[route] ?? section.at(-1) ?? "dashboard";
+}
+
+export function hasLegacyPage(module: string, section: string[]) {
+  return Boolean(pageLoaders[pageKey(module, section)]?.[loaderSlug(module, section)]);
+}
 
 export function LegacyPageRenderer({ module, section }: { module: string; section: string[] }) {
-  const loader = loaders[loaderKey(module, section)];
-  if (!loader) return null;
-  const Page = lazy(loader);
+  const Page = pageLoaders[pageKey(module, section)]?.[loaderSlug(module, section)] as ComponentType<any> | undefined;
+  if (!Page) return null;
   return <div className="legacy-page-content"><MemoryRouter initialEntries={[`/app/${module}/${section.join("/")}`]}><AccessProvider><Suspense fallback={<div className="legacy-loading">Loading extracted workspace page…</div>}><Page /></Suspense></AccessProvider></MemoryRouter></div>;
 }

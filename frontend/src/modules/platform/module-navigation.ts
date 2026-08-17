@@ -1,4 +1,5 @@
 import type { AppNavGroup } from "@/components/AppNavigation";
+import { financePages, hrPages, realEstatePages, toughforcePages } from "@/modules/manifests";
 
 const group = (label: string, items: Array<[string, string]>, module: string): AppNavGroup => ({
   label,
@@ -43,3 +44,19 @@ export const moduleNavigation: Record<string, AppNavGroup[]> = {
 };
 
 export const moduleNames: Record<string, string> = { "real-estate": "Real Estate", toughforce: "ToughForce", hr: "HR", finance: "Finance" };
+
+// Keep the curated navigation above, but expose every extracted ZIP screen as
+// a reachable page as well. Existing links are preserved and are not replaced.
+const extractedPages: Record<string, readonly { name: string; slug: string }[]> = {
+  finance: financePages,
+  hr: hrPages,
+  "real-estate": realEstatePages,
+  toughforce: toughforcePages,
+};
+
+for (const [module, pages] of Object.entries(extractedPages)) {
+  const groups = moduleNavigation[module] ?? [];
+  const existing = new Set(groups.flatMap((group) => group.links.map((link) => typeof link === "string" ? link.split("/").pop() : link.href.split("/").pop())));
+  const missing = pages.filter((page) => !existing.has(page.slug));
+  if (missing.length) groups.push(group("MIGRATED PAGES", missing.map((page) => [page.name, page.slug] as [string, string]), module));
+}
