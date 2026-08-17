@@ -103,19 +103,28 @@ async function rest(authenticated: Auth, path: string, options: RequestInit = {}
 async function platformOwner(authenticated: Auth) {
   const organizations = await rest(authenticated, "organizations?organization_type=eq.platform_owner&status=eq.active&select=id", {}, "platform");
   const ids = (organizations as { id: string }[]).map((row) => row.id);
-  if (!ids.length) throw safe(403, "PLATFORM_ACCESS_DENIED", "Platform access denied");
+  if (!ids.length) return organizationDirector(authenticated);
   const memberships = await rest(authenticated, `organization_memberships?user_id=eq.${authenticated.userId}&status=eq.active&organization_id=in.(${ids.join(",")})&select=id,organization_id`, {}, "iam");
-  if (!(memberships as unknown[]).length) throw safe(403, "PLATFORM_ACCESS_DENIED", "Platform access denied");
+  if (!(memberships as unknown[]).length) return organizationDirector(authenticated);
   const membershipIds = (memberships as { id: string; organization_id: string }[]).map((row) => row.id);
   const apps = await rest(authenticated, "applications?application_key=eq.PLATFORM_ADMIN&status=eq.active&select=id", {}, "platform");
-  if (!(apps as unknown[]).length) throw safe(403, "PLATFORM_ACCESS_DENIED", "Platform access denied");
+  if (!(apps as unknown[]).length) return organizationDirector(authenticated);
   const assignments = await rest(authenticated, `member_app_roles?organization_membership_id=in.(${membershipIds.join(",")})&application_id=eq.${(apps as { id: string }[])[0].id}&select=role_id,valid_from,valid_until`, {}, "iam");
   const now = Date.now();
   const roleIds = (assignments as { role_id: string; valid_from: string; valid_until: string | null }[]).filter((row) => (!row.valid_from || Date.parse(row.valid_from) <= now) && (!row.valid_until || Date.parse(row.valid_until) > now)).map((row) => row.role_id);
-  if (!roleIds.length) throw safe(403, "PLATFORM_ACCESS_DENIED", "Platform access denied");
+  if (!roleIds.length) return organizationDirector(authenticated);
   const roles = await rest(authenticated, `roles?id=in.(${roleIds.join(",")})&role_key=eq.platform_admin&scope=eq.platform&select=id`, {}, "iam");
-  if (!(roles as unknown[]).length) throw safe(403, "PLATFORM_ACCESS_DENIED", "Platform access denied");
+  if (!(roles as unknown[]).length) return organizationDirector(authenticated);
   return { organizationId: (memberships as { organization_id: string }[])[0].organization_id };
+}
+async function organizationDirector(authenticated: Auth) {
+  const memberships = await rest(authenticated, `organization_memberships?user_id=eq.${authenticated.userId}&status=eq.active&select=id,organization_id`, {}, "iam") as { id: string; organization_id: string }[];
+  if (!memberships.length) throw safe(403, "PLATFORM_ACCESS_DENIED", "Platform access denied");
+  const organizationIds = memberships.map((row) => row.organization_id).join(",");
+  const roles = await rest(authenticated, `roles?organization_id=in.(${organizationIds})&scope=eq.organization&role_key=eq.director&select=organization_id`, {}, "iam") as { organization_id: string }[];
+  const organizationId = roles[0]?.organization_id;
+  if (!organizationId) throw safe(403, "PLATFORM_ACCESS_DENIED", "Platform access denied");
+  return { organizationId };
 }
 const binding = (authenticated: Auth, request: Request) => hmac(`${authenticated.userId}:${authenticated.sessionId || "no-session"}:${request.headers.get("user-agent") || "unknown"}`);
 const fixedPath = (request: Request) => new URL(request.url).pathname.replace(/^\/functions\/v1\/app-mfa/, "").replace(/^\/app-mfa/, "");
