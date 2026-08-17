@@ -2,24 +2,23 @@
 
 import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { safeAuthDestination } from "@/lib/auth/redirects";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export default function PhoneVerifyPage() {
   const router = useRouter();
-  const params = useSearchParams();
   const [phone, setPhone] = useState<string | null>(null);
+  const [next, setNext] = useState("/apps");
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [cooldown, setCooldown] = useState(30);
   const refs = useRef<Array<HTMLInputElement | null>>([]);
-  const next = safeAuthDestination(params.get("next"));
-
   useEffect(() => {
     setPhone(window.sessionStorage.getItem("hakika_phone_login"));
+    setNext(safeAuthDestination(new URLSearchParams(window.location.search).get("next")));
   }, []);
   useEffect(() => {
     if (!cooldown) return;
