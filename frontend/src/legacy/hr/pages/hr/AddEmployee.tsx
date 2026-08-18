@@ -137,19 +137,49 @@ interface Employment {
   refRelationship: string;
 }
 
+type DeliveryChannelStatus = 'sent' | 'failed' | 'not_reported' | 'not_provided';
+
+interface EmployeeDeliveryStatus {
+  email: DeliveryChannelStatus;
+  sms: DeliveryChannelStatus;
+  warnings: string[];
+}
+
+const deliveryLabel = (status: DeliveryChannelStatus) => {
+  if (status === 'sent') return 'Sent';
+  if (status === 'failed') return 'Failed';
+  if (status === 'not_provided') return 'No address/number';
+  return 'Not reported';
+};
+
+const deliveryWasSent = (result: any, channel: 'email' | 'sms') => {
+  const direct = result?.[`${channel}Sent`];
+  const snake = result?.[`${channel}_sent`];
+  const nested = result?.delivery?.[channel];
+  return direct === true || snake === true || nested === 'sent' || nested?.status === 'sent';
+};
+
+const deliveryWasReported = (result: any, channel: 'email' | 'sms') => {
+  const direct = result?.[`${channel}Sent`];
+  const snake = result?.[`${channel}_sent`];
+  const nested = result?.delivery?.[channel];
+  return typeof direct === 'boolean' || typeof snake === 'boolean' || typeof nested === 'string' || typeof nested?.status === 'string';
+};
+
 const AddEmployee: React.FC = () => {
   const navigate = useNavigate();
   const [currentSection, setCurrentSection] = useState(() => {
     const saved = localStorage.getItem('employee_draft_section');
     return saved ? parseInt(saved, 10) : 0;
   });
+  const [draftStatus, setDraftStatus] = useState<'saved' | 'saving' | 'error'>('saved');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [credentials, setCredentials] = useState({ username: '', password: '' });
-  const [deliveryStatus, setDeliveryStatus] = useState<{ emailSent: boolean; smsSent: boolean; warnings: string[] }>({
-    emailSent: false,
-    smsSent: false,
+  const [deliveryStatus, setDeliveryStatus] = useState<EmployeeDeliveryStatus>({
+    email: 'not_reported',
+    sms: 'not_reported',
     warnings: [],
   });
   const [saveSummary, setSaveSummary] = useState<{ salary: string; startDate: string; fieldsCaptured: number } | null>(null);
@@ -215,30 +245,27 @@ const AddEmployee: React.FC = () => {
     return saved ? JSON.parse(saved) : [{ employeeName: '', company: '', dateJoined: '', dateLeft: '', position: '', reasonLeaving: '', refFirstName: '', refSecondName: '', refLastName: '', refId: '', refEmail: '', refRelationship: '' }];
   });
 
-  // Auto-save draft on every change
+  // Keep the in-progress onboarding form in this browser. Debouncing the write
+  // prevents localStorage serialization from blocking keystrokes on large forms.
   useEffect(() => {
-    localStorage.setItem('employee_draft', JSON.stringify(formData));
-  }, [formData]);
+    setDraftStatus('saving');
+    const timer = window.setTimeout(() => {
+      try {
+        localStorage.setItem('employee_draft', JSON.stringify(formData));
+        localStorage.setItem('employee_draft_nok', JSON.stringify(nextOfKin));
+        localStorage.setItem('employee_draft_education', JSON.stringify(education));
+        localStorage.setItem('employee_draft_tertiary', JSON.stringify(tertiary));
+        localStorage.setItem('employee_draft_employment', JSON.stringify(employment));
+        localStorage.setItem('employee_draft_section', currentSection.toString());
+        setDraftStatus('saved');
+      } catch (draftError) {
+        console.warn('Unable to save employee draft locally:', draftError);
+        setDraftStatus('error');
+      }
+    }, 300);
 
-  useEffect(() => {
-    localStorage.setItem('employee_draft_nok', JSON.stringify(nextOfKin));
-  }, [nextOfKin]);
-
-  useEffect(() => {
-    localStorage.setItem('employee_draft_education', JSON.stringify(education));
-  }, [education]);
-
-  useEffect(() => {
-    localStorage.setItem('employee_draft_tertiary', JSON.stringify(tertiary));
-  }, [tertiary]);
-
-  useEffect(() => {
-    localStorage.setItem('employee_draft_employment', JSON.stringify(employment));
-  }, [employment]);
-
-  useEffect(() => {
-    localStorage.setItem('employee_draft_section', currentSection.toString());
-  }, [currentSection]);
+    return () => window.clearTimeout(timer);
+  }, [formData, nextOfKin, education, tertiary, employment, currentSection]);
 
   // Load data on mount
   useEffect(() => {
@@ -322,9 +349,17 @@ const AddEmployee: React.FC = () => {
   };
 
   const validateAllRequiredSections = (): boolean => {
-    const sectionChecks = [0, 1];
-    const results = sectionChecks.map((section) => validateSection(section));
-    return results.every(Boolean);
+    if (!validateSection(0)) {
+      setCurrentSection(0);
+      setErrors((previous) => ({ ...previous, submit: 'Complete the highlighted primary details before continuing.' }));
+      return false;
+    }
+    if (!validateSection(1)) {
+      setCurrentSection(1);
+      setErrors((previous) => ({ ...previous, submit: 'Complete the highlighted bank information before continuing.' }));
+      return false;
+    }
+    return true;
   };
 
   const handleFileUpload = async (field: string, file: File) => {
@@ -338,8 +373,12 @@ const AddEmployee: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+    if (!formData.consentGiven) {
+      setCurrentSection(sections.length - 1);
+      setErrors((previous) => ({ ...previous, submit: 'Please confirm that the employee information is accurate and complete.' }));
+      return;
+    }
     if (!validateAllRequiredSections()) {
-      setCurrentSection(0);
       return;
     }
     
@@ -357,10 +396,64 @@ const AddEmployee: React.FC = () => {
       const email = formData.email;
       const normalizedPhoneNumber = normalizePhoneNumber(formData.phoneNumber);
 
-      const { data: { session } } = await supabase.auth.getSession();
+      let { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        await supabase.auth.refreshSession();
+        ({ data: { session } } = await supabase.auth.getSession());
+      }
       if (!session) throw new Error('You must be logged in to add an employee');
 
-      const funcData = await invokeEdgeFunction('admin-create-user', {
+      const onboardingData = {
+        firstName: formData.firstName,
+        secondName: formData.secondName,
+        lastName: formData.lastName,
+        username: username.trim(),
+        idNumber: formData.idNumber,
+        dateOfBirth: formData.dateOfBirth || null,
+        gender: formData.gender,
+        maritalStatus: formData.maritalStatus || null,
+        religion: formData.religion || null,
+        phoneNumber: normalizedPhoneNumber,
+        email: email.trim(),
+        originalHome: formData.originalHome || null,
+        currentResidence: formData.currentResidence || null,
+        department: formData.department,
+        designation: formData.designation,
+        directorDepartment: formData.directorDepartment || null,
+        employmentType: formData.employmentType,
+        employmentStatus: 'active',
+        employmentStartDate: formData.employmentStartDate || null,
+        salary: formData.salary || null,
+        module: formData.module.length > 0 ? formData.module : [],
+        nssf: formData.nssf || null,
+        sha: formData.sha || null,
+        kraPin: formData.kraPin || null,
+        bankName: formData.bankName,
+        branchCode: formData.branchCode || null,
+        accountNumber: formData.accountNumber,
+        bankBranch: (formData.bankBranch === 'Other' ? formData.otherBankBranch : formData.bankBranch) || null,
+        pwdStatus: formData.pwdStatus === 'Yes',
+        chronicCondition: formData.chronicCondition === 'Other' ? formData.chronicConditionOther : formData.chronicCondition,
+        medicalNotes: formData.medicalNotes || null,
+        statutoryDeductions: formData.statutoryDeductions.includes('Other')
+          ? [...formData.statutoryDeductions.filter((d: string) => d !== 'Other'), formData.statutoryDeductionsOther]
+          : formData.statutoryDeductions,
+        dependants: nextOfKin.map((entry) => ({ ...entry, phone: normalizePhoneNumber(entry.phone) || '' })),
+        education: [...education, ...tertiary],
+        employment_history: employment,
+        login_credentials: {
+          username: username.trim(),
+          temporary_password: tempPassword,
+          generated_at: new Date().toISOString(),
+        },
+      };
+      const { error: onboardingError } = await supabase.schema('hr').rpc('create_employee_onboarding', { payload: onboardingData });
+      if (onboardingError) throw new Error(`Employee record could not be saved: ${onboardingError.message}`);
+
+      let funcData: any = null;
+      let accountWarning = '';
+      try {
+        funcData = await invokeEdgeFunction('admin-create-user', {
         email: email.trim(),
         password: tempPassword,
         userData: {
@@ -410,10 +503,14 @@ const AddEmployee: React.FC = () => {
         sendSms: true
       }, {
         accessToken: session.access_token
-      });
-      if (!funcData?.user) throw new Error('Failed to create user account');
+        });
+      } catch (accountError: any) {
+        accountWarning = accountError?.message || 'Employee record saved, but the optional login invitation could not be created.';
+        console.warn('Employee record saved; login invitation unavailable:', accountError);
+      }
+      if (!funcData?.user && !accountWarning) accountWarning = 'Employee record saved, but the login account response was incomplete. The employee can be invited again from Total Employees.';
 
-      const user = funcData.user;
+      const user = funcData?.user ?? null;
       setSaveSummary({
         salary: String(formData.salary || '0'),
         startDate: formData.employmentStartDate || '-',
@@ -427,16 +524,19 @@ const AddEmployee: React.FC = () => {
           return Boolean(value);
         }).length,
       });
+      const deliveryWarnings = [...(Array.isArray(funcData?.warnings) ? funcData.warnings : []), ...(accountWarning ? [accountWarning] : [])];
       setDeliveryStatus({
-        emailSent: !!funcData?.emailSent,
-        smsSent: !!funcData?.smsSent,
-        warnings: Array.isArray(funcData?.warnings) ? funcData.warnings : [],
+        email: !email ? 'not_provided' : deliveryWasReported(funcData, 'email') ? (deliveryWasSent(funcData, 'email') ? 'sent' : 'failed') : accountWarning ? 'failed' : 'not_reported',
+        sms: !normalizedPhoneNumber ? 'not_provided' : deliveryWasReported(funcData, 'sms') ? (deliveryWasSent(funcData, 'sms') ? 'sent' : 'failed') : accountWarning ? 'failed' : 'not_reported',
+        warnings: deliveryWarnings,
       });
 
       // Upload files if any
       for (const [field, file] of Object.entries(uploadedFiles) as [string, File][]) {
-        const filePath = `employees/${user.id}/${field}_${Date.now()}`;
-        await supabase.storage.from('documents').upload(filePath, file);
+        if (user?.id) {
+          const filePath = `employees/${user.id}/${field}_${Date.now()}`;
+          await supabase.storage.from('documents').upload(filePath, file);
+        }
       }
 
       // Clear all drafts
@@ -543,8 +643,8 @@ const AddEmployee: React.FC = () => {
             SMS: <span className="font-semibold">{formData.phoneNumber || 'No phone'}</span>
           </p>
           <div className="bg-gray-50 dark:bg-[#0A1628] p-4 rounded-lg border border-gray-200 dark:border-[#1e293b] text-left text-sm text-gray-700 dark:text-gray-300 mb-6">
-            <p>Email delivery: <span className="font-semibold">{deliveryStatus.emailSent ? 'Sent' : 'Not confirmed'}</span></p>
-            <p>SMS delivery: <span className="font-semibold">{deliveryStatus.smsSent ? 'Sent' : 'Not confirmed'}</span></p>
+            <p>Email delivery: <span className={`font-semibold hr-delivery-status ${deliveryStatus.email}`}>{deliveryLabel(deliveryStatus.email)}</span></p>
+            <p>SMS delivery: <span className={`font-semibold hr-delivery-status ${deliveryStatus.sms}`}>{deliveryLabel(deliveryStatus.sms)}</span></p>
             {deliveryStatus.warnings.length > 0 && (
               <p className="text-amber-600 dark:text-amber-400 mt-2">
                 {deliveryStatus.warnings.join(' | ')}
@@ -553,7 +653,8 @@ const AddEmployee: React.FC = () => {
           </div>
           <button 
             onClick={() => navigate('/app/hr/total-employees')}
-            className="w-full py-2.5 bg-black dark:bg-white text-white dark:text-black text-sm font-medium rounded-lg hover:opacity-90 transition-opacity"
+            className="hr-success-button"
+            type="button"
           >
             View All Employees
           </button>
@@ -700,8 +801,8 @@ const AddEmployee: React.FC = () => {
                   className={`w-full bg-white dark:bg-[#0A1628] border ${errors.bankName ? 'border-red-500' : 'border-gray-300 dark:border-[#1e293b]'} px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm text-gray-900 dark:text-white`}
                 >
                   <option value="">Select Bank</option>
-                  {banks.map((bank) => (
-                    <option key={bank.code} value={bank.name}>{bank.name} ({bank.code})</option>
+                  {banks.map((bank, index) => (
+                    <option key={`${bank.code}-${bank.name}-${index}`} value={bank.name}>{bank.name} ({bank.code})</option>
                   ))}
                 </select>
                 {errors.bankName && (
@@ -720,7 +821,7 @@ const AddEmployee: React.FC = () => {
                     className="w-full bg-white dark:bg-[#0A1628] border border-gray-300 dark:border-[#1e293b] px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm text-gray-900 dark:text-white"
                   >
                     <option value="">Select branch</option>
-                    {branchesForKenyanBank(formData.bankName).map((branch) => <option key={branch} value={branch}>{branch}</option>)}
+                    {branchesForKenyanBank(formData.bankName).map((branch, index) => <option key={`${branch}-${index}`} value={branch}>{branch}</option>)}
                     <option value="Other">Other branch</option>
                   </select>
                   {formData.bankBranch === 'Other' && <input value={formData.otherBankBranch || ''} onChange={(e) => handleInputChange('otherBankBranch', e.target.value)} placeholder="Enter branch name" className="mt-2 w-full bg-white dark:bg-[#0A1628] border border-gray-300 dark:border-[#1e293b] px-3 py-2 rounded-lg text-sm text-gray-900 dark:text-white" />}
@@ -1021,14 +1122,16 @@ const AddEmployee: React.FC = () => {
             </div>
             <div className="flex gap-3">
               <button
+                type="button"
                 onClick={() => setShowConfirmModal(false)}
-                className="flex-1 rounded-2xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-brand-purple/30 hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/[0.06]"
+                className="hr-modal-button secondary"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={confirmAndCreate}
-                className="flex-1 rounded-2xl bg-brand-purple px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-pink"
+                className="hr-modal-button primary"
               >
                 Create Employee
               </button>
@@ -1042,11 +1145,12 @@ const AddEmployee: React.FC = () => {
         <div className="flex items-center gap-4">
           <button 
             onClick={() => navigate('/app/hr/dashboard')} 
-            className="rounded-full border border-slate-200 bg-white p-2 shadow-sm transition hover:border-brand-purple/30 hover:text-brand-purple dark:border-white/10 dark:bg-white/[0.04]"
+            className="hr-page-back-button"
             title="Back to HR Dashboard"
             aria-label="Back"
           >
             <ArrowLeft size={20} className="text-gray-600 dark:text-gray-400" />
+            <span>Back</span>
           </button>
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-brand-purple">Add Employee</p>
@@ -1114,19 +1218,32 @@ const AddEmployee: React.FC = () => {
           )}
 
           {/* Navigation Buttons */}
-            <div className="mt-8 flex justify-between border-t border-slate-200 pt-6 dark:border-white/10">
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200 pt-6 dark:border-white/10">
+            <div className="flex items-center gap-3">
             <button
-              onClick={() => setCurrentSection(Math.max(0, currentSection - 1))}
-              disabled={currentSection === 0}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-[#334155] rounded-lg hover:bg-gray-50 dark:hover:bg-[#1e293b] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              type="button"
+              onClick={() => currentSection === 0
+                ? navigate('/app/hr/employees')
+                : setCurrentSection((section) => Math.max(0, section - 1))}
+              className="inline-flex min-h-11 min-w-[132px] items-center justify-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-brand-purple hover:bg-slate-50 hover:text-brand-purple dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-brand-purple"
+              aria-label={currentSection === 0 ? 'Back to employees' : 'Back to previous step'}
             >
-              Previous
+              <ArrowLeft size={17} aria-hidden="true" />
+              {currentSection === 0 ? 'Back to employees' : 'Back'}
             </button>
+            <span role="status" aria-live="polite" className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              {draftStatus === 'saving' && 'Saving draft…'}
+              {draftStatus === 'saved' && 'Draft saved'}
+              {draftStatus === 'error' && 'Draft could not be saved'}
+            </span>
+            </div>
             
             {currentSection === sections.length - 1 ? (
               <button
+                type="button"
                 onClick={handleSubmit}
-                disabled={!formData.consentGiven || isSubmitting}
+                disabled={isSubmitting}
+                title={formData.consentGiven ? 'Review and add employee' : 'Confirm the accuracy checkbox first'}
                 className="flex items-center gap-2 rounded-2xl bg-brand-purple px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-pink disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSubmitting ? (
@@ -1140,8 +1257,9 @@ const AddEmployee: React.FC = () => {
               </button>
             ) : (
               <button 
+                type="button"
                 onClick={handleNext} 
-                className="rounded-2xl bg-brand-purple px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-pink"
+                className="inline-flex min-h-11 min-w-[112px] items-center justify-center rounded-xl bg-brand-purple px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-pink"
               >
                 Next
               </button>

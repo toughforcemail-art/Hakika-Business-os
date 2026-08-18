@@ -10,9 +10,9 @@ extra_search_path = ["public", "extensions"]
 
 [auth]
 enabled = true
-site_url = "http://localhost:3000"
-additional_redirect_urls = []
-jwt_expiry = 3600
+site_url = "https://hakika-business-os-frontend.vercel.app/"
+additional_redirect_urls = ["https://hakika-business-os-frontend.vercel.app/", "http://localhost:3000"]
+jwt_expiry = 43200
 password_requirements = "lower_upper_letters_digits_symbols"
 
 [mfa]
@@ -33,7 +33,9 @@ enable_confirmations = true
 secure_password_change = false
 max_frequency = "1m0s"
 otp_length = 8
-otp_expiry = 3600
+# Keep email confirmation links aligned with the 48-hour Hakika invitation
+# token. The invitation RPC remains the final authorization check.
+otp_expiry = 172800
 
 [sms]
 enable_signup = true

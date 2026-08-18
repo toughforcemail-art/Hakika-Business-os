@@ -1,9 +1,9 @@
 // @ts-nocheck
-import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 import { isAbortError } from './abortErrors';
+import { getSupabasePublicConfig } from '@/lib/supabase/config';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+const { url: supabaseUrl, publishableKey: supabaseKey } = getSupabasePublicConfig();
 
 if (!supabaseUrl || !supabaseKey) {
     throw new Error("Missing Supabase URL or Key");
@@ -12,7 +12,10 @@ if (!supabaseUrl || !supabaseKey) {
 export const SUPABASE_URL = supabaseUrl;
 export const SUPABASE_ANON_KEY = supabaseKey;
 
-export const supabase = createClient(supabaseUrl, supabaseKey, {
+// Use the same SSR browser client as the App Router pages. The previous
+// createClient instance used a separate local-storage session and could make
+// legacy HR pages appear signed out while the main app was authenticated.
+export const supabase = createBrowserClient(supabaseUrl, supabaseKey, {
     auth: {
         autoRefreshToken: true,
         persistSession: true,

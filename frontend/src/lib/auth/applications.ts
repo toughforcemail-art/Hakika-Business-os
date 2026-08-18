@@ -3,6 +3,7 @@ import "server-only";
 import { hasPlatformSuperAdminAccess, requireAuthenticatedUser, requireHakikaLoginVerification } from "@/lib/auth/server";
 import { requireHakikaStepUp } from "@/lib/auth/hakika-step-up";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 
 export type ApplicationKey = "REAL_ESTATE" | "HR" | "FINANCE" | "TOUGHFORCE" | "PLATFORM_ADMIN" | "CUSTOMER_ADMIN";
 export type AccessibleApplication = { key: ApplicationKey; name: string; description: string; logo: string | null; logoAlt: string; href: string; status: "active" | "trial"; trialEndsAt: string | null };
@@ -23,7 +24,7 @@ function isEntitled(status: string, trialEndsAt: string | null) {
 }
 
 /** Canonical server-side access source for the launcher and app switcher. */
-export async function getAccessibleApplications(selectedOrganizationId?: string, selectedCompanyId?: string): Promise<{ context: WorkspaceContext; applications: AccessibleApplication[] }> {
+export const getAccessibleApplications = cache(async function getAccessibleApplications(selectedOrganizationId?: string, selectedCompanyId?: string): Promise<{ context: WorkspaceContext; applications: AccessibleApplication[] }> {
   const { supabase, context: authContext } = await requireAuthenticatedUser();
   let membershipQuery = supabase.schema("iam").from("organization_memberships").select("id, organization_id, joined_at").eq("user_id", authContext.userId).eq("status", "active");
   if (selectedOrganizationId) membershipQuery = membershipQuery.eq("organization_id", selectedOrganizationId);
@@ -44,7 +45,14 @@ export async function getAccessibleApplications(selectedOrganizationId?: string,
   if (queryError) { console.error("[launcher] access query failed", queryError.code ?? "unknown", queryError.message ?? "unknown"); throw new Error("Application access is unavailable"); }
   if (!organization.data) { console.error("[launcher] active membership organization was not visible"); throw new Error("Application access is unavailable"); }
   const isPlatformSuperAdmin = await hasPlatformSuperAdminAccess();
-  const assignedCompanyIds = new Set((companyMemberships.data ?? []).map((row) => row.company_id));
+  const hasOrganizationDirectorAccess = Boolean(
+    (organizationRoles.data ?? []).some((role) => /director|admin|owner/i.test(role.role_key)),
+  );
+  const assignedCompanyIds = new Set(
+    hasOrganizationDirectorAccess
+      ? (allCompanies.data ?? []).map((row) => row.id)
+      : (companyMemberships.data ?? []).map((row) => row.company_id),
+  );
   if (selectedCompanyId && !assignedCompanyIds.has(selectedCompanyId)) throw new Error("Company access denied");
   const company = (allCompanies.data ?? []).find((candidate) => candidate.id === selectedCompanyId) ?? (allCompanies.data ?? []).find((candidate) => assignedCompanyIds.has(candidate.id)) ?? null;
   if (selectedCompanyId && !company) throw new Error("Company access denied");
@@ -53,19 +61,19 @@ export async function getAccessibleApplications(selectedOrganizationId?: string,
   const roleIds = [...new Set(validAssignments.map((assignment) => assignment.role_id))];
   const { data: roles, error: rolesError } = roleIds.length ? await supabase.schema("iam").from("roles").select("id, role_key, scope").in("id", roleIds) : { data: [], error: null };
   if (rolesError) throw new Error("Application access is unavailable");
-  const hasOrganizationDirectorAccess = Boolean((roles ?? []).some((role) => role.scope === "organization" && /director|admin|owner/i.test(role.role_key)) || (organizationRoles.data ?? []).some((role) => /director|admin|owner/i.test(role.role_key)));
+  const hasOrganizationDirectorRole = Boolean((roles ?? []).some((role) => role.scope === "organization" && /director|admin|owner/i.test(role.role_key)));
   const subscriptionsByApplication = new Map((subscriptions.data ?? []).map((subscription) => [subscription.application_id, subscription]));
   const appsById = new Map((applications.data ?? []).map((application) => [application.id, application]));
   const accessible = isPlatformSuperAdmin
     ? (applications.data ?? []).filter((application) => catalog[application.application_key as ApplicationKey]).map((application) => ({ ...catalog[application.application_key as ApplicationKey], status: "active" as const, trialEndsAt: null }))
-    : hasOrganizationDirectorAccess
+    : (hasOrganizationDirectorAccess || hasOrganizationDirectorRole)
       ? (applications.data ?? []).filter((application) => catalog[application.application_key as ApplicationKey]).map((application) => ({ ...catalog[application.application_key as ApplicationKey], status: "active" as const, trialEndsAt: null }))
       : validAssignments.map((assignment) => ({ assignment, application: appsById.get(assignment.application_id), subscription: subscriptionsByApplication.get(assignment.application_id) })).filter((item) => item.application && item.subscription && isEntitled(item.subscription.status, item.subscription.trial_ends_at)).map((item) => ({ ...catalog[item.application!.application_key as ApplicationKey], status: item.subscription?.status === "trial" ? "trial" as const : "active" as const, trialEndsAt: item.subscription?.trial_ends_at ?? null }));
   const unique = new Map(accessible.map((application) => [application.key, application]));
   return { context: { organizationId: organization.data.id, organizationName: organization.data.display_name, companyId: company?.id ?? null, companyName: company?.name ?? null }, applications: [...unique.values()] };
-}
+});
 
-export async function requireCurrentApplication(applicationKey: ApplicationKey) {
+export const requireCurrentApplication = cache(async function requireCurrentApplication(applicationKey: ApplicationKey) {
   await requireHakikaLoginVerification();
   if (applicationKey === "PLATFORM_ADMIN") {
     try { await requireHakikaStepUp(); } catch { redirect("/auth/sms-verify?next=%2Fplatform%2Fdashboard"); }
@@ -75,4 +83,4 @@ export async function requireCurrentApplication(applicationKey: ApplicationKey) 
     if (!result.applications.some((application) => application.key === applicationKey)) redirect("/apps");
     return result;
   } catch { redirect("/apps"); }
-}
+});

@@ -1,5 +1,4 @@
 import { requireApplicationContext } from "@/lib/platform/context";
-import { AdminShell } from "@/components/AdminPage";
 import { InviteDirectorForm } from "./InviteDirectorForm";
 import { ResendInvitationButton } from "./ResendInvitationButton";
 
@@ -14,7 +13,7 @@ export default async function PlatformUserInvitePage() {
     ctx.supabase.schema("iam").from("invitations").select("id,organization_id,email,phone,status,delivery_channel,delivery_status,expires_at,created_at,accepted_at,accepted_by").order("created_at", { ascending: false }).limit(100),
   ]);
   const organizationMap = new Map((organizations ?? []).map((organization: any) => [organization.id, organization.display_name]));
-  return <AdminShell kind="platform"><main className="workspace-main">
+  return <main className="workspace-main">
     <header className="re-page-header"><div><span className="re-eyebrow">Platform access</span><h1>Invite organization director</h1><p>Assign organization-wide access to subscribed applications without granting platform-superadmin privileges.</p></div></header>
     <InviteDirectorForm organizations={organizations ?? []}/>
     <section className="re-surface re-table-wrap platform-invitation-history">
@@ -29,5 +28,5 @@ export default async function PlatformUserInvitePage() {
       </tbody></table>
       {!invitations?.length && <div className="re-empty compact"><h3>No invitations yet</h3><p>Invitations created from this page will appear here.</p></div>}
     </section>
-  </main></AdminShell>;
+  </main>;
 }

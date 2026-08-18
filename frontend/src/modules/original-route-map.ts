@@ -115,6 +115,7 @@ export const originalRouteToSlug: Record<string, Record<string, string>> = {
     "/app/hr/employee-directory": "total-employees",
     "/app/hr/edit-employee/:id": "edit-employee",
     "/app/hr/add-employee": "add-employee",
+    "/app/hr/employees/add": "add-employee",
     "/app/hr/total-employees": "total-employees",
     "/app/hr/past-employees": "past-employees",
     "/app/hr/departments": "departments",

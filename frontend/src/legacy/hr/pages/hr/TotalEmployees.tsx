@@ -1,7 +1,7 @@
 // @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, Download, UserPlus, Edit, Trash2, Eye, Mail, Upload, UserX, UserCheck, Printer, Plus } from 'lucide-react';
+import { Search, Download, Edit, Trash2, Eye, Mail, Upload, Printer, Plus, KeyRound, Users, ShieldCheck, Building2, RefreshCw, X, SlidersHorizontal } from 'lucide-react';
 import { printWorkspacePage } from '../../utils/printHelpers';
 import { supabase } from '../../utils/supabase';
 import Toast from '../../components/Toast';
@@ -35,6 +35,12 @@ interface Employee {
   bank_name?: string | null;
   bank_branch?: string | null;
   account_number?: string | null;
+  credentials?: { username?: string | null; temporary_password?: string | null } | null;
+  is_director?: boolean;
+  membership_id?: string | null;
+  organization_name?: string | null;
+  access_label?: string | null;
+  directory_status?: string | null;
 }
 
 const TotalEmployees: React.FC = () => {
@@ -47,6 +53,7 @@ const TotalEmployees: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('all');
   const [employmentTypeFilter, setEmploymentTypeFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [resendModal, setResendModal] = useState<{ show: boolean; employee: Employee | null }>({ show: false, employee: null });
   const [deleteModal, setDeleteModal] = useState<{ show: boolean; employee: Employee | null }>({ show: false, employee: null });
   const [deactivateModal, setDeactivateModal] = useState<{ show: boolean; employee: Employee | null }>({ show: false, employee: null });
@@ -68,16 +75,10 @@ const TotalEmployees: React.FC = () => {
 
   useEffect(() => {
     filterEmployees();
-  }, [searchTerm, departmentFilter, employmentTypeFilter, employees]);
+  }, [searchTerm, departmentFilter, employmentTypeFilter, statusFilter, employees]);
 
   const fetchEmployees = async () => {
     try {
-      const selectAttempts = [
-        'id, employee_no, full_name, email, phone, phone_number, salary, role, company_id, company_code, module, department, created_at',
-        'id, full_name, email, phone, phone_number, role, company_id, company_code, module, department, created_at',
-        '*',
-      ] as const;
-
       let data: Employee[] | null = null;
       let lastError: any = null;
       
@@ -94,12 +95,11 @@ const TotalEmployees: React.FC = () => {
             
       const filterSets = scopeFilters.length > 0 ? scopeFilters : [{ kind: 'none' as const, value: null }];
 
-      for (const fields of selectAttempts) {
-        for (const filter of filterSets) {
+      for (const filter of filterSets) {
           let query = supabase
             .schema('hr')
             .from('employees')
-            .select('id, employee_no:employee_number, full_name:display_name, email, phone, employment_type, employment_start_date, company_id, role:employment_status, created_at')
+            .select('id, employee_number, display_name, email, phone, employment_type, employment_start_date, company_id, employment_status, created_at')
             .order('created_at', { ascending: false });
 
           if (filter.kind === 'company_id') {
@@ -109,14 +109,14 @@ const TotalEmployees: React.FC = () => {
           }
 
           const result = await query;
-          data = result.data as Employee[] | null;
+          data = (result.data || []).map((employee: any) => ({
+            ...employee,
+            employee_no: employee.employee_number,
+            full_name: employee.display_name,
+            role: employee.employment_status,
+          })) as Employee[];
           lastError = result.error;
-          if (!result.error && (result.data?.length ?? 0) > 0) {
-            break;
-          }
-        }
-
-        if (!lastError && (data?.length ?? 0) > 0) break;
+          if (!result.error) break;
       }
 
       if (lastError) throw lastError;
@@ -124,12 +124,70 @@ const TotalEmployees: React.FC = () => {
         const fallback = await supabase
           .schema('hr')
           .from('employees')
-          .select('id, employee_no:employee_number, full_name:display_name, email, phone, employment_type, employment_start_date, company_id, role:employment_status, created_at')
+          .select('id, employee_number, display_name, email, phone, employment_type, employment_start_date, company_id, employment_status, created_at')
           .order('created_at', { ascending: false });
 
         if (!fallback.error) {
-          data = fallback.data as Employee[] | null;
+          data = (fallback.data || []).map((employee: any) => ({
+            ...employee,
+            employee_no: employee.employee_number,
+            full_name: employee.display_name,
+            role: employee.employment_status,
+          })) as Employee[];
         }
+      }
+
+      const employeeIds = (data || []).map((employee: any) => employee.id).filter(Boolean);
+      if (employeeIds.length) {
+        const details = await supabase.schema('hr').from('employee_onboarding_details').select('employee_id,onboarding_data').in('employee_id', employeeIds);
+        if (!details.error) {
+          const detailMap = new Map((details.data || []).map((detail: any) => [detail.employee_id, detail.onboarding_data || {}]));
+          data = (data || []).map((employee: any) => {
+            const onboarding = detailMap.get(employee.id) || {};
+            return {
+              ...employee,
+              credentials: onboarding.login_credentials || null,
+              department: onboarding.department || employee.department || null,
+              role: onboarding.designation || employee.role || null,
+              phone_number: onboarding.phone || employee.phone_number || employee.phone || null,
+            };
+          });
+        }
+      }
+
+      // Directors live in IAM rather than HR. Merge them into this directory so
+      // HR administrators have one workforce view without duplicating records.
+      try {
+        const { data: directoryUsers, error: directorError } = await supabase
+          .schema('hr')
+          .rpc('list_workforce_directors');
+        if (directorError) throw directorError;
+        const employeeIdsSet = new Set((data || []).map((employee: any) => employee.id));
+        const directors = (directoryUsers || [])
+          .filter((person: any) => !employeeIdsSet.has(person.user_id))
+          .map((person: any) => {
+          return {
+            id: person.user_id,
+            membership_id: person.membership_id,
+            full_name: person.display_name || 'Unnamed director',
+            email: person.email || '',
+            phone: person.phone_e164 || '',
+            phone_number: person.phone_e164 || '',
+            employee_no: null,
+            department: 'Organization leadership',
+            role: 'Director',
+            employment_type: 'Organization access',
+            employment_status: person.membership_status || 'active',
+            directory_status: person.profile_status || person.membership_status || 'active',
+            organization_name: person.organization_name || null,
+            access_label: person.access_label || 'Organization applications',
+            created_at: person.joined_at || new Date().toISOString(),
+            is_director: true,
+          } as Employee;
+        });
+        data = [...(data || []), ...directors];
+      } catch (directoryError) {
+        console.warn('Employee directory: director records unavailable', directoryError);
       }
 
       setEmployees(data || []);
@@ -146,9 +204,8 @@ const TotalEmployees: React.FC = () => {
 
     if (searchTerm) {
       filtered = filtered.filter(emp =>
-        emp.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (emp.employee_no || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.email.toLowerCase().includes(searchTerm.toLowerCase())
+        [emp.full_name, emp.employee_no, emp.email, emp.phone, emp.phone_number, emp.department, emp.role, emp.organization_name, emp.access_label]
+          .some(value => String(value || '').toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
@@ -160,21 +217,25 @@ const TotalEmployees: React.FC = () => {
       filtered = filtered.filter(emp => (emp.employment_type || emp.role || '').toLowerCase().includes(employmentTypeFilter.toLowerCase()));
     }
 
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(emp => String(emp.directory_status || emp.employment_status || 'active').toLowerCase() === statusFilter);
+    }
+
     setFilteredEmployees(filtered);
   };
 
   const exportToCSV = () => {
-    const headers = ['Employee No', 'Name', 'Email', 'Phone', 'Scope', 'Designation', 'Role', 'Type', 'Start Date'];
+    const headers = ['Employee No', 'Name', 'Email', 'Phone', 'Department', 'Role', 'Type', 'Status', 'Start Date'];
     const rows = filteredEmployees.map(emp => [
       emp.employee_no,
       emp.full_name,
       emp.email,
       emp.phone,
-      emp.module || emp.company_code || 'N/A',
-      'N/A',
+      emp.department || emp.organization_name || 'N/A',
       emp.role || 'N/A',
-      emp.role || 'N/A',
-      emp.created_at
+      emp.employment_type || 'N/A',
+      emp.directory_status || emp.employment_status || 'N/A',
+      emp.employment_start_date || emp.created_at
     ]);
 
     const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
@@ -274,6 +335,10 @@ const TotalEmployees: React.FC = () => {
 
   const departments = ['HR', 'Finance', 'Security', 'Real Estate', 'Property Management', 'Administration', 'IT', 'Operations'];
   const employmentTypes = ['Permanent', 'Casual', 'Consultant'];
+  const employeeRecords = employees.filter((employee) => !employee.is_director);
+  const activeCount = employeeRecords.filter((employee) => String(employee.directory_status || employee.employment_status || 'active').toLowerCase() === 'active').length;
+  const onLeaveCount = employeeRecords.filter((employee) => ['leave', 'on_leave', 'on leave'].includes(String(employee.directory_status || employee.employment_status || '').toLowerCase())).length;
+  const inactiveCount = employeeRecords.filter((employee) => ['inactive', 'archived', 'exited', 'disabled'].includes(String(employee.directory_status || employee.employment_status || '').toLowerCase())).length;
   const panelCls = 'rounded-xl border border-gray-200 bg-white shadow-sm dark:border-white/10 dark:bg-dark-surface';
   const inputCls = 'w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-900 outline-none transition focus:ring-2 focus:ring-brand-purple/30 dark:border-white/10 dark:bg-black/20 dark:text-white';
   const subtleButtonCls = 'px-4 py-2 bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-300 text-sm font-medium rounded-xl hover:bg-gray-200 dark:hover:bg-white/10 transition flex items-center gap-2';
@@ -282,53 +347,48 @@ const TotalEmployees: React.FC = () => {
   // No longer blocking with full page loader if we have cache
 
   return (
-    <div className="hr-employees-page p-6 space-y-6 bg-gray-50 dark:bg-dark-bg min-h-screen">
+    <div className="hr-employees-page hr-workforce-command-center hr-total-employees-reference p-6 space-y-6 bg-gray-50 dark:bg-dark-bg min-h-screen">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       
-      <div className="hr-employees-header flex justify-between items-center">
+      <div className="hr-employees-header hr-workforce-hero flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {(location.pathname.includes('real-estate') || location.pathname.includes('security')) ? 'Workforce Hub' : 'Total Employees'}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300 mt-1">{filteredEmployees.length} employees found</p>
+          <p className="hr-section-kicker">WORKFORCE OVERVIEW</p>
+          <h1 className="hr-workforce-title">Total Employees</h1>
+          <p className="text-gray-600 dark:text-gray-300 mt-2 max-w-2xl">Manage employee records, employment status and workforce assignments.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => printWorkspacePage()}
-            className={subtleButtonCls}
-            title="Print List"
-          >
-            <Printer size={16} />
-            Print
-          </button>
-          <button
-            onClick={() => setShowBulkImport(true)}
-            title="Upload employee data from CSV/Excel"
-            className={`${subtleButtonCls} text-brand-purple dark:text-brand-purple hover:bg-brand-purple/10`}
-          >
-            <Upload size={16} />
-            Bulk Import
-          </button>
+        <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => navigate('/app/hr/add-employee')}
             title="Open form to add a new employee"
-            className="px-4 py-2 bg-brand-purple text-white text-sm font-medium rounded-xl hover:bg-opacity-90 transition flex items-center gap-2 shadow-lg shadow-brand-purple/20"
+            className="px-4 py-2 bg-teal-700 text-white text-sm font-semibold rounded-xl hover:bg-teal-800 transition flex items-center gap-2 shadow-lg shadow-teal-900/10"
           >
             <Plus size={16} />
             Add Employee
           </button>
+          <button onClick={exportToCSV} title="Download current list as CSV" className="hr-top-export-button"><Download size={16} /> Export</button>
         </div>
       </div>
 
-      <div className={`${panelCls} hr-employees-controls p-4`}>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="hr-workforce-metrics">
+        <div className="hr-metric-card"><div><span className="hr-metric-label">Total employees</span><strong>{employeeRecords.length}</strong><small>All employee records</small></div></div>
+        <div className="hr-metric-card"><div><span className="hr-metric-label">Active employees</span><strong>{activeCount}</strong><small>Currently employed</small></div></div>
+        <div className="hr-metric-card"><div><span className="hr-metric-label">On leave</span><strong>{onLeaveCount}</strong><small>Approved absence</small></div></div>
+        <div className="hr-metric-card"><div><span className="hr-metric-label">Inactive</span><strong>{inactiveCount}</strong><small>Archived or exited</small></div></div>
+      </div>
+
+      <div className={`${panelCls} hr-employees-controls hr-directory-toolbar p-5`}>
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div><p className="hr-section-kicker">EMPLOYEE DIRECTORY</p><h2 className="text-lg font-semibold text-slate-900 dark:text-white">All employees</h2></div>
+          <span className="hr-result-count">{employees.length} records</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
             <input
               id="emp-search"
               type="text"
-              placeholder="Search employees..."
-              title="Search employees by name, number, or email"
+              placeholder="Name, email, phone, role or organization"
+              title="Search the workforce directory"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={`${inputCls} pl-10`}
@@ -361,29 +421,42 @@ const TotalEmployees: React.FC = () => {
             ))}
           </select>
 
-          <button
-            onClick={exportToCSV}
-            title="Download current list as CSV"
-            className="px-4 py-2 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 flex items-center justify-center gap-2 text-gray-700 dark:text-gray-200"
+          <select
+            id="status-filter"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            title="Filter by access or employment status"
+            className={inputCls}
           >
-            <Download className="w-4 h-4" />
-            Export CSV
-          </button>
+            <option value="all">All statuses</option>
+            <option value="active">Active</option>
+            <option value="pending">Pending</option>
+            <option value="invited">Invited</option>
+            <option value="suspended">Suspended</option>
+          </select>
+
+          <button onClick={() => { setSearchTerm(''); setDepartmentFilter('all'); setEmploymentTypeFilter('all'); setStatusFilter('all'); }} title="Clear all directory filters" className="hr-clear-button"><SlidersHorizontal size={16} /> Filters</button>
         </div>
       </div>
 
-      <div className={`${panelCls} hr-employees-table-panel`}>
+      <div className={`${panelCls} hr-employees-table-panel overflow-hidden`}>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-5 py-4 dark:border-white/10">
+          <div><p className="hr-section-kicker">EMPLOYEE DIRECTORY</p><h2 className="text-xl font-semibold text-slate-900 dark:text-white">All employees</h2></div>
+          <span className="text-sm text-slate-500 dark:text-slate-300">{employeeRecords.length + employees.filter((employee) => employee.is_director).length} records</span>
+        </div>
         <div className="overflow-x-auto pb-2" style={{ scrollbarGutter: 'stable both-edges' }}>
-          <table className="w-full min-w-[980px]">
+          <table className="w-full min-w-[1280px] hr-directory-table">
             <thead className="bg-gray-50 dark:bg-white/5 border-b border-gray-200 dark:border-white/10">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Employee No</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Employee</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Employee No.</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Phone</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Department</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Designation</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Role</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Employment Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Workspace Access</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Start Date</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
               </tr>
@@ -405,58 +478,60 @@ const TotalEmployees: React.FC = () => {
                 ))
               ) : filteredEmployees.map((employee) => (
                 <tr key={employee.id} className="hover:bg-gray-50 dark:hover:bg-white/5">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                    {employee.employee_no || 'N/A'}
-                  </td>
                   <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
-                    <div className="min-w-[220px]">
-                      <div className="font-medium text-gray-900 dark:text-white">{employee.full_name}</div>
-                      <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        {employee.email || 'No email'}
+                    <div className="hr-person-cell">
+                      <div className="hr-avatar">{employee.full_name.split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()}</div>
+                      <div>
+                        <strong>{employee.full_name}</strong>
+                        <span>{employee.email || 'No email'}</span>
+                        {employee.is_director && <em>Director · {employee.access_label || 'Organization access'}</em>}
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {employee.phone_number || employee.phone || 'N/A'}
+                    {employee.employee_no || '—'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {employee.department || employee.module || employee.company_code || 'N/A'}
+                    {employee.phone_number || employee.phone || '—'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {employee.role || 'N/A'}
+                    {employee.department || employee.module || employee.company_code || '—'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {employee.role || 'N/A'}
+                    {employee.role || (employee.is_director ? 'Director' : '—')}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
+                    {employee.is_director ? 'Director' : (employee.role || 'Employee')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      employee.employment_type === 'Permanent' ? 'bg-green-100 text-green-800' :
-                      employee.employment_type === 'Casual' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-blue-100 text-blue-800'
-                    }`}>
+                    <span className={`hr-type-badge ${employee.is_director ? 'director' : ''}`}>
                       {employee.employment_type || 'Staff'}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap"><span className={`hr-status-badge ${String(employee.directory_status || employee.employment_status || 'active').toLowerCase()}`}>{employee.directory_status || employee.employment_status || 'Active'}</span></td>
+                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300">
+                    {employee.access_label || (employee.is_director ? 'Organization applications' : 'HR workspace')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     {employee.employment_start_date ? new Date(employee.employment_start_date).toLocaleDateString() : 'N/A'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                     <div className="flex items-center justify-end gap-2">
-                      <button 
+                      {!employee.is_director && <button
                         onClick={() => setResendModal({ show: true, employee })}
                         className="p-1.5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-md transition-colors"
                         title="Resend Credentials"
                       >
                         <Mail className="w-4 h-4 text-brand-purple" />
-                      </button>
-                      <button 
+                      </button>}
+                      {!employee.is_director && <button
                         onClick={() => navigate(`/app/hr/edit-employee/${employee.id}`)}
                         className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10 transition-colors"
                         title="View Details"
                       >
                         <Eye className="w-4 h-4 text-gray-600 dark:text-gray-300" />
                         View
-                      </button>
+                      </button>}
                       <button 
                         onClick={() => navigate(`/app/hr/edit-employee/${employee.id}`)}
                         className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10 transition-colors"
@@ -467,12 +542,13 @@ const TotalEmployees: React.FC = () => {
                       </button>
                       <button 
                         onClick={() => setViewModal({ show: true, employee })}
-                        className="p-1.5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-md transition-colors"
-                        title="View employee"
+                        className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/10 transition-colors"
+                        title="View employee credentials"
                       >
-                        <UserCheck className="w-4 h-4 text-green-600" />
+                        <KeyRound className="w-4 h-4 text-green-600" />
+                        Credentials
                       </button>
-                      {['Super Admin', 'Director', 'Director / Super Admin'].includes(userRole || '') && (
+                      {!employee.is_director && ['Super Admin', 'Director', 'Director / Super Admin'].includes(userRole || '') && (
                         <button 
                           onClick={() => setDeleteModal({ show: true, employee })}
                           className="p-1.5 hover:bg-gray-100 dark:hover:bg-white/10 rounded-md transition-colors"
@@ -487,6 +563,15 @@ const TotalEmployees: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
+
+        <div className="hr-directory-footer">
+          <span>Showing {filteredEmployees.length ? `1–${filteredEmployees.length}` : '0'} of {employees.length}</span>
+          <div>
+            <button type="button" className="hr-pagination-button" disabled>Previous</button>
+            <button type="button" className="hr-pagination-current" aria-current="page">1</button>
+            <button type="button" className="hr-pagination-button" disabled>Next</button>
+          </div>
         </div>
 
         {filteredEmployees.length === 0 && (
@@ -542,6 +627,17 @@ const TotalEmployees: React.FC = () => {
                     {viewModal.employee.bank_branch && <div><span className="text-sm text-gray-600 dark:text-gray-400">Branch:</span> <span className="text-sm font-medium text-gray-900 dark:text-white">{viewModal.employee.bank_branch}</span></div>}
                     {viewModal.employee.account_number && <div><span className="text-sm text-gray-600 dark:text-gray-400">Account Number:</span> <span className="text-sm font-medium text-gray-900 dark:text-white">{viewModal.employee.account_number}</span></div>}
                   </div>
+                </div>
+              )}
+
+              {viewModal.employee.credentials && (
+                <div className="hr-employee-credentials">
+                  <h4 className="text-sm font-semibold text-gray-500 uppercase mb-3">Login Credentials</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div><span className="text-sm text-gray-600 dark:text-gray-400">Username:</span> <span className="text-sm font-mono font-semibold text-gray-900 dark:text-white">{viewModal.employee.credentials.username || 'N/A'}</span></div>
+                    <div><span className="text-sm text-gray-600 dark:text-gray-400">Temporary password:</span> <span className="text-sm font-mono font-semibold text-gray-900 dark:text-white">{viewModal.employee.credentials.temporary_password || 'N/A'}</span></div>
+                  </div>
+                  <p className="mt-3 text-xs text-amber-700">Share these credentials securely and ask the employee to change the temporary password after signing in.</p>
                 </div>
               )}
             </div>

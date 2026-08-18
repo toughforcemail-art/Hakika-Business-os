@@ -96,7 +96,11 @@ export async function getPlatformContext(options: { applicationKey: ApplicationK
   const permissions = new Set((permissionsResult.data ?? []).map((row) => row.permission_key));
   const isOrganizationAdmin = Boolean(hasOrganizationDirectorAccess || permissions.has("admin.organizations.manage") || permissions.has("admin.members.invite"));
   const mode = (options.companyScopeMode ?? organizationResult.data.company_scope_mode ?? "organization_only") as CompanyScopeMode;
-  const assignedCompanyIds = new Set((companyMembershipsResult.data ?? []).map((row) => row.company_id));
+  const assignedCompanyIds = new Set(
+    hasOrganizationDirectorAccess
+      ? (companiesResult.data ?? []).map((row) => row.id)
+      : (companyMembershipsResult.data ?? []).map((row) => row.company_id),
+  );
   const selectedCompany = options.selectedCompanyId ?? await readSelection(COMPANY_COOKIE);
   const company = selectedCompany ? (companiesResult.data ?? []).find((row) => row.id === selectedCompany && assignedCompanyIds.has(row.id)) : null;
   if (selectedCompany && !company) throw new PlatformContextError("COMPANY_ACCESS_DENIED", "The selected company is not available to you.");
@@ -105,6 +109,6 @@ export async function getPlatformContext(options: { applicationKey: ApplicationK
 }
 
 export async function requireApplicationContext(applicationKey: ApplicationKey) { return getPlatformContext({ applicationKey }); }
-export async function requirePageAccess(applicationKey: ApplicationKey, permission: string) { const context = await getPlatformContext({ applicationKey }); if (!context.permissions.has(permission) && !context.isPlatformSuperAdmin) throw new PlatformContextError("PERMISSION_DENIED", "You do not have access to this page."); return context; }
+export async function requirePageAccess(applicationKey: ApplicationKey, permission: string) { const context = await getPlatformContext({ applicationKey }); if (!context.permissions.has(permission) && !context.isPlatformSuperAdmin && !context.isOrganizationAdmin) throw new PlatformContextError("PERMISSION_DENIED", "You do not have access to this page."); return context; }
 export async function requireActionPermission(applicationKey: ApplicationKey, permission: string) { return requirePageAccess(applicationKey, permission); }
 export async function requireMutationContext(applicationKey: ApplicationKey, permission: string) { return requireActionPermission(applicationKey, permission); }

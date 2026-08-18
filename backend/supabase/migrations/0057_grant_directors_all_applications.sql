@@ -38,7 +38,15 @@ begin
     where om.organization_id = organization_record.organization_id
       and om.status = 'active'
       and a.status = 'active'
-    on conflict (organization_membership_id, company_id, application_id, role_id) do nothing;
+      and not exists (
+        select 1
+        from iam.member_app_roles existing_assignment
+        where existing_assignment.organization_membership_id = om.id
+          and existing_assignment.organization_id = om.organization_id
+          and existing_assignment.company_id is null
+          and existing_assignment.application_id = a.id
+          and existing_assignment.role_id = director_role_id
+      );
   end loop;
 end;
 $$;

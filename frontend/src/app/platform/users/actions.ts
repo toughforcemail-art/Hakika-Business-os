@@ -26,9 +26,9 @@ async function deliverInvitation(ctx: any, invitationId: string, inviteUrl: stri
   if (!session) throw new Error("Authentication session unavailable");
   const { url, publishableKey } = getSupabasePublicConfig();
   const response = await fetch(`${url}/functions/v1/send-invitation`, { method: "POST", headers: { apikey: publishableKey, Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" }, body: JSON.stringify({ invitationId, inviteUrl }), cache: "no-store" });
-  const result = await response.json().catch(() => ({})) as { results?: Record<string, string>; error?: string };
+  const result = await response.json().catch(() => ({})) as { results?: Record<string, string>; details?: Record<string, string>; error?: string };
   if (!response.ok) { const failedChannels = Object.entries(result.results ?? {}).filter(([, status]) => status === "failed").map(([channel]) => channel).join(" and "); throw new Error(failedChannels ? `${failedChannels} delivery failed.` : (result.error || "Automatic delivery failed.")); }
-  return result.results ?? {};
+  return { results: result.results ?? {}, details: result.details ?? {} };
 }
 
 export async function inviteOrganizationDirector(_previous: any, form: FormData) {
@@ -65,7 +65,10 @@ export async function inviteOrganizationDirector(_previous: any, form: FormData)
   let delivery: Record<string, string> = {};
   let deliveryWarning = "";
   try {
-    delivery = await deliverInvitation(ctx, invitation.id, inviteUrl);
+    const deliveryResult = await deliverInvitation(ctx, invitation.id, inviteUrl);
+    delivery = deliveryResult.results;
+    const failedDetails = Object.entries(deliveryResult.details).map(([channel, detail]) => `${channel}: ${detail}`).join(" · ");
+    if (failedDetails) deliveryWarning = `Some delivery channels failed: ${failedDetails}`;
   } catch (error) {
     console.error("Invitation delivery failed", error);
     deliveryWarning = "The invitation was created, but automatic delivery could not be completed.";
@@ -89,8 +92,10 @@ export async function resendOrganizationInvitation(_previous: any, form: FormDat
   try {
     const origin = await applicationOrigin();
     const inviteUrl = `${origin}/accept-invitation?token=${rawToken}`;
-    const delivery = await deliverInvitation(ctx, invitationId, inviteUrl);
-    return { success: true, delivery };
+    const deliveryResult = await deliverInvitation(ctx, invitationId, inviteUrl);
+    const delivery = deliveryResult.results;
+    const failedDetails = Object.entries(deliveryResult.details).map(([channel, detail]) => `${channel}: ${detail}`).join(" · ");
+    return { success: true, delivery, deliveryWarning: failedDetails || undefined, inviteUrl };
   } catch (error) {
     console.error("Invitation resend failed", error);
     return { error: `The invitation was renewed, but ${error instanceof Error ? error.message : "automatic delivery failed"} Copy the new link below or verify the provider configuration.`, inviteUrl: `${await applicationOrigin()}/accept-invitation?token=${rawToken}` };

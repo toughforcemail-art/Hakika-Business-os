@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { RealEstateWorkspace, type RealEstatePageDefinition } from "@/components/RealEstateWorkspace";
 import { requireCurrentApplication } from "@/lib/auth/applications";
 import { hasPlatformSuperAdminAccess, requirePermission } from "@/lib/auth/server";
+import { originalRouteToSlug } from "@/modules/original-route-map";
+import { LegacyPageRenderer } from "@/modules/platform/LegacyPageRenderer";
 
 const readProperty = "real_estate.properties.read";
 const readUnits = "real_estate.units.read";
@@ -11,6 +13,11 @@ const readBilling = "real_estate.billing.read";
 const readInvoices = "real_estate.invoices.read";
 const readPayments = "real_estate.payments.read";
 const readMpesa = "real_estate.mpesa.read";
+
+// These routes have first-class connected implementations in the App Router.
+// Other migrated routes should render the detailed ZIP page instead of the
+// generic empty-state compatibility screen.
+const connectedRoutes = new Set(["dashboard", "properties", "units", "tenants", "leases", "invoices", "payments"]);
 
 const definitions: Record<string, RealEstatePageDefinition> = {
   properties: { title: "Properties", section: "Overview", description: "Manage the property portfolio visible to your company.", permission: readProperty, emptyTitle: "No properties yet", columns: ["Property", "Code", "Status"] },
@@ -83,6 +90,11 @@ const definitions: Record<string, RealEstatePageDefinition> = {
 export default async function RealEstateSection({ params }: { params: Promise<{ section: string[] }> }) {
   const { section } = await params;
   const routeKey = section.join("/");
+  const migratedSlug = originalRouteToSlug["real-estate"]?.[`/app/real-estate/${routeKey}`];
+  const access = await requireCurrentApplication("REAL_ESTATE");
+  if (migratedSlug && !connectedRoutes.has(routeKey)) {
+    return <main className="integrated-page legacy-integrated-page"><LegacyPageRenderer module="real-estate" section={section} /></main>;
+  }
   const definition = definitions[routeKey] ?? {
     title: routeKey.split("/").at(-1)?.replaceAll("-", " ") ?? "Real Estate",
     section: "Real Estate",
@@ -91,7 +103,6 @@ export default async function RealEstateSection({ params }: { params: Promise<{ 
     emptyTitle: "No records yet",
     columns: ["Reference", "Status", "Updated"],
   } satisfies RealEstatePageDefinition;
-  const access = await requireCurrentApplication("REAL_ESTATE");
   if (!(await hasPlatformSuperAdminAccess())) {
     try { await requirePermission(definition.permission, access.context.organizationId, access.context.companyId ?? undefined); } catch { redirect("/real-estate/dashboard"); }
   }

@@ -345,7 +345,7 @@ export const AccessProvider = ({ children }: { children: ReactNode }) => {
       });
 
       if (profileError) {
-        console.error('AccessContext: Profile fetch error', {
+        console.warn('AccessContext: Profile fetch failed; using the signed-in account fallback.', {
           userId: user.id,
           status: profileStatus,
           statusText: profileStatusText,

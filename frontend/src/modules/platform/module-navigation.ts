@@ -25,7 +25,7 @@ export const moduleNavigation: Record<string, AppNavGroup[]> = {
   ],
   hr: [
     group("I. CORE", [["Dashboard", "dashboard"], ["Employee Directory", "employees"], ["Salary Advances", "salary-advances"], ["Salary Advance Approvals", "salary-advances/approvals"]], "hr"),
-    group("II. DATA WORKSPACE", [["Add Employee", "employees/add"], ["Total Employees", "total-employees"], ["Past Employees", "past-employees"], ["Departments", "departments"], ["Roles & Designations", "designations"], ["Modules", "modules"], ["Companies", "companies"]], "hr"),
+    group("II. DATA WORKSPACE", [["Add Employee", "add-employee"], ["Total Employees", "total-employees"], ["Past Employees", "past-employees"], ["Departments", "departments"], ["Roles & Designations", "designations"], ["Modules", "modules"], ["Companies", "companies"]], "hr"),
     group("TIME WORKSPACE", [["Biometric Logs", "biometric-logs"], ["Site Deployment", "site-deployment"], ["Overtime Records", "overtime-records"]], "hr"),
     group("EXPENSES WORKSPACE", [["Expense Reports", "expenses"]], "hr"),
     group("ASSETS WORKSPACE", [["Add Asset", "assets/add"], ["Asset Assignment", "assets/assignment"], ["Asset Tracking", "assets"]], "hr"),

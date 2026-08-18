@@ -1,0 +1,122 @@
+.hr-workforce-command-center { color: #17243b; }
+.hr-workforce-hero { align-items: stretch; background: linear-gradient(135deg, #14213a 0%, #1d3153 62%, #087d70 150%); border-radius: 24px; color: #fff; margin: -2px 0 2px; padding: 2rem; position: relative; overflow: hidden; }
+.hr-workforce-hero::after { content: ''; position: absolute; width: 280px; height: 280px; right: 24%; top: -190px; border: 1px solid rgba(255,255,255,.14); border-radius: 50%; box-shadow: 0 0 0 24px rgba(255,255,255,.035), 0 0 0 48px rgba(255,255,255,.025); pointer-events: none; }
+.hr-workforce-hero-copy { position: relative; z-index: 1; }
+.hr-workforce-hero .hr-section-kicker { color: #8ce3d2; }
+.hr-workforce-hero .hr-workforce-title { color: #fff; }
+.hr-workforce-hero .max-w-2xl { color: #d3deed !important; }
+.hr-workforce-hero-note { align-self: center; display: grid; gap: .35rem; min-width: 220px; padding: 1rem 1.1rem; border: 1px solid rgba(255,255,255,.2); border-radius: 16px; background: rgba(255,255,255,.1); position: relative; z-index: 1; }
+.hr-workforce-hero-note span { color: #8ce3d2; font-size: .65rem; font-weight: 800; letter-spacing: .14em; }
+.hr-workforce-hero-note strong { color: #fff; font-size: 1rem; }
+.hr-workforce-hero-note small { color: #d3deed; font-size: .72rem; line-height: 1.45; }
+.hr-workforce-hero > .flex { align-self: flex-start; position: relative; z-index: 1; }
+.hr-workforce-hero > .flex .hr-outline-button { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.3); color: #fff; }
+.hr-workforce-hero > .flex .hr-outline-button:hover { background: #fff; color: #14213a; }
+.hr-workforce-hero > .flex button:last-child { background: #8ce3d2 !important; border-color: #8ce3d2 !important; color: #123247 !important; }
+.hr-workforce-hero > .flex button:last-child:hover { background: #fff !important; border-color: #fff !important; }
+.hr-section-kicker { color: #087d70; font-size: 0.72rem; font-weight: 800; letter-spacing: .16em; }
+.hr-workforce-title { color: #14213a; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(2.2rem, 4vw, 3.4rem); font-weight: 700; letter-spacing: -.045em; line-height: 1; margin-top: .45rem; }
+.hr-workforce-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.hr-metric-card { align-items: flex-start; background: #fff; border: 1px solid #dbe4f0; border-radius: 18px; box-shadow: 0 12px 30px rgba(28, 50, 82, .06); display: flex; gap: .85rem; min-height: 120px; padding: 1.1rem; }
+.hr-metric-card strong { color: #13213b; display: block; font-size: 1.8rem; line-height: 1.1; margin-top: .25rem; }
+.hr-metric-card small { color: #70809a; display: block; font-size: .75rem; margin-top: .35rem; }
+.hr-metric-label { color: #64748b; display: block; font-size: .72rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.hr-metric-icon { align-items: center; background: #eef2ff; border-radius: 12px; color: #315edb; display: inline-flex; height: 38px; justify-content: center; width: 38px; }
+.hr-metric-icon.teal { background: #e2f6f1; color: #087d70; }
+.hr-metric-icon.blue { background: #e8efff; color: #315edb; }
+.hr-metric-icon.amber { background: #fff4dc; color: #a36500; }
+.hr-result-count { background: #e6f6f1; border-radius: 999px; color: #087d70; font-size: .78rem; font-weight: 800; padding: .45rem .75rem; }
+.hr-outline-button, .hr-export-button, .hr-clear-button { align-items: center; background: #fff; border: 1px solid #cfdbea; border-radius: 11px; color: #33445e; display: inline-flex; font-size: .82rem; font-weight: 700; gap: .45rem; justify-content: center; min-height: 42px; padding: .65rem .9rem; transition: background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease; }
+.hr-outline-button:hover, .hr-export-button:hover, .hr-clear-button:hover { background: #f1f6fb; border-color: #91a6c0; color: #13213b; transform: translateY(-1px); }
+.hr-outline-button:focus-visible, .hr-export-button:focus-visible, .hr-clear-button:focus-visible { outline: 3px solid rgba(49, 94, 219, .25); outline-offset: 2px; }
+.hr-directory-toolbar input, .hr-directory-toolbar select { background: #fff; border-color: #cfdaea; min-height: 46px; }
+.hr-directory-table th { background: #f4f7fb; color: #62718a; font-size: .68rem; letter-spacing: .1em; white-space: nowrap; }
+.hr-directory-table td { border-color: #e5ebf3; vertical-align: middle; }
+.hr-directory-table tbody tr:hover { background: #f8fbff; }
+.hr-avatar { align-items: center; background: #12203a; border-radius: 12px; color: #fff; display: inline-flex; font-size: .75rem; font-weight: 800; height: 38px; justify-content: center; width: 38px; }
+.hr-role-badge, .hr-status-badge { background: #eef2f7; border-radius: 999px; color: #52627a; display: inline-flex; font-size: .68rem; font-weight: 800; padding: .28rem .55rem; }
+.hr-role-badge.director { background: #e2f6f1; color: #087d70; }
+.hr-status-badge { background: #e2f6f1; color: #087d70; text-transform: capitalize; }
+.hr-status-badge.pending, .hr-status-badge.invited, .hr-status-badge.incomplete { background: #fff4dc; color: #9a6200; }
+.hr-status-badge.suspended, .hr-status-badge.disabled { background: #fee9e8; color: #b42318; }
+@media (max-width: 900px) { .hr-workforce-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .hr-workforce-hero-note { align-self: flex-start; } }
+@media (max-width: 560px) { .hr-workforce-metrics { grid-template-columns: 1fr; } .hr-metric-card { min-height: 96px; } .hr-workforce-hero { padding: 1.35rem; border-radius: 18px; } .hr-workforce-hero-note { width: 100%; } }
+
+/* Reference-style Total Employees composition. The existing JSX remains the
+   source of truth for fetching, director merging and row actions. */
+.hr-total-employees-reference {
+  box-sizing: border-box;
+  min-height: 100%;
+  overflow-x: hidden;
+  padding: 2.4rem clamp(1rem, 3vw, 3.5rem) 4rem;
+  background: #f5f7fb;
+  color: #17233a;
+}
+.hr-total-employees-reference .hr-employees-header {
+  align-items: flex-start;
+  background: transparent;
+  border-radius: 0;
+  color: #17233a;
+  display: flex;
+  margin: 0 0 1.7rem;
+  padding: 0;
+}
+.hr-total-employees-reference .hr-workforce-hero::after { display: none; }
+.hr-total-employees-reference .hr-section-kicker { color: #5148e5; font-size: .7rem; letter-spacing: .16em; }
+.hr-total-employees-reference .hr-workforce-title { color: #17233a; font-size: clamp(2.2rem, 4vw, 3.45rem); letter-spacing: -.055em; margin-top: .4rem; }
+.hr-total-employees-reference .hr-employees-header > div:first-child { max-width: 700px; }
+.hr-total-employees-reference .hr-employees-header .max-w-2xl { color: #6d7c96 !important; font-size: .98rem; margin-top: .55rem; }
+.hr-total-employees-reference .hr-workforce-hero-note { display: none; }
+.hr-total-employees-reference .hr-employees-header > .flex { align-self: flex-start; margin-left: auto; }
+.hr-total-employees-reference .hr-employees-header > .flex .hr-outline-button { background: #fff; border-color: #d5ddeb; color: #52627a; }
+.hr-total-employees-reference .hr-employees-header > .flex button:first-child { background: linear-gradient(135deg, #6448e9, #4135cf) !important; border-color: #5140db !important; color: #fff !important; }
+.hr-total-employees-reference .hr-top-export-button { align-items: center; background: #fff; border: 1px solid #d5ddeb; border-radius: 9px; color: #5148d8; display: inline-flex; gap: .45rem; min-height: 42px; padding: .65rem 1rem; font-size: .8rem; font-weight: 700; }
+.hr-total-employees-reference .hr-top-export-button:hover { background: #f4f2ff; border-color: #5148d8; }
+.hr-total-employees-reference .hr-workforce-metrics { gap: 1rem; margin-bottom: 1.15rem; }
+.hr-total-employees-reference .hr-metric-card { border: 1px solid #dce3ef; border-radius: 16px; box-shadow: 0 7px 20px rgba(48, 64, 92, .035); min-height: 116px; padding: 1.35rem 1.4rem; }
+.hr-total-employees-reference .hr-metric-icon { display: none; }
+.hr-total-employees-reference .hr-metric-label { color: #71809a; font-size: .78rem; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.hr-total-employees-reference .hr-metric-card strong { color: #19263e; font-size: 1.9rem; margin-top: .55rem; }
+.hr-total-employees-reference .hr-metric-card small { color: #554cde; font-size: .75rem; margin-top: .38rem; }
+.hr-total-employees-reference .hr-employees-controls { border: 1px solid #dce3ef; border-radius: 16px 16px 0 0; box-shadow: none; margin: 0; padding: 1.25rem 1.4rem 1rem; }
+.hr-total-employees-reference .hr-employees-controls > .flex:first-child { margin-bottom: .95rem; }
+.hr-total-employees-reference .hr-employees-controls h2 { color: #17233a; font-size: 1.15rem; }
+.hr-total-employees-reference .hr-result-count { background: transparent; color: #6f7d95; font-size: .8rem; font-weight: 500; padding: 0; }
+.hr-total-employees-reference .hr-directory-toolbar .grid { display: grid; grid-template-columns: minmax(260px, 2.4fr) repeat(3, minmax(145px, 1fr)) auto; gap: .75rem; }
+.hr-total-employees-reference .hr-directory-toolbar input, .hr-total-employees-reference .hr-directory-toolbar select { background: #fff; border-color: #d6dfed; border-radius: 9px; color: #263650; min-height: 43px; }
+.hr-total-employees-reference .hr-directory-toolbar input::placeholder { color: #93a0b5; }
+.hr-total-employees-reference .hr-clear-button { background: #fff; border-color: #d6dfed; color: #52627a; min-height: 43px; }
+.hr-total-employees-reference .hr-clear-button svg { color: #52627a; }
+.hr-total-employees-reference .hr-employees-table-panel { border: 1px solid #dce3ef; border-radius: 0 0 16px 16px; box-shadow: 0 7px 20px rgba(48, 64, 92, .035); }
+.hr-total-employees-reference .hr-employees-table-panel > .flex { display: none; }
+.hr-total-employees-reference .hr-employees-table-panel > .overflow-x-auto { overflow-x: auto; padding: 0 1.4rem; }
+.hr-total-employees-reference .hr-directory-table { min-width: 980px; table-layout: auto; }
+.hr-total-employees-reference .hr-directory-table th { background: #fff; border-bottom: 1px solid #e3e8f0; color: #71809a; font-size: .68rem; font-weight: 700; letter-spacing: .08em; padding: .85rem .65rem; text-transform: uppercase; }
+.hr-total-employees-reference .hr-directory-table td { border-color: #e8edf4; color: #35425a; font-size: .78rem; padding: .72rem .65rem; }
+.hr-total-employees-reference .hr-directory-table tbody tr:hover { background: #fafbff; }
+.hr-total-employees-reference .hr-directory-table th:first-child, .hr-total-employees-reference .hr-directory-table td:first-child { padding-left: 0; width: 250px; }
+.hr-total-employees-reference .hr-directory-table th:last-child, .hr-total-employees-reference .hr-directory-table td:last-child { padding-right: 0; }
+.hr-total-employees-reference .hr-avatar { background: #eeeaff; border-radius: 50%; color: #5849da; flex: 0 0 auto; height: 36px; width: 36px; }
+.hr-person-cell { align-items: center; display: flex; gap: .7rem; }
+.hr-person-cell > div:last-child { display: grid; gap: .14rem; }
+.hr-person-cell strong { color: #1b2942; font-size: .8rem; font-weight: 700; }
+.hr-person-cell span { color: #71809a; font-size: .7rem; }
+.hr-person-cell em { color: #554cde; font-size: .66rem; font-style: normal; font-weight: 700; }
+.hr-total-employees-reference .hr-role-badge { display: none; }
+.hr-total-employees-reference .hr-type-badge { background: #f0f3f8; border-radius: 999px; color: #5d6c82; display: inline-flex; font-size: .68rem; padding: .28rem .5rem; white-space: nowrap; }
+.hr-total-employees-reference .hr-type-badge.director { background: #edeaff; color: #5148d8; }
+.hr-total-employees-reference .hr-status-badge { font-size: .68rem; padding: .3rem .6rem; }
+.hr-total-employees-reference .hr-row-actions { align-items: center; display: flex; gap: .25rem; justify-content: flex-end; }
+.hr-total-employees-reference .hr-row-icon, .hr-total-employees-reference .hr-row-action { align-items: center; background: transparent; border: 0; border-radius: 7px; color: #66758c; display: inline-flex; min-height: 30px; padding: .3rem; }
+.hr-total-employees-reference .hr-row-action { font-size: .72rem; font-weight: 700; }
+.hr-total-employees-reference .hr-row-icon:hover, .hr-total-employees-reference .hr-row-action:hover { background: #eef0ff; color: #5148db; }
+.hr-total-employees-reference .hr-row-icon.danger:hover { background: #fff0f0; color: #b42318; }
+.hr-total-employees-reference .hr-empty-state { color: #71809a; padding: 2.5rem 1rem; text-align: center; }
+.hr-total-employees-reference .hr-directory-footer { align-items: center; border-top: 1px solid #e8edf4; color: #71809a; display: flex; font-size: .76rem; justify-content: space-between; padding: 1rem 0; margin: 0 1.4rem; }
+.hr-total-employees-reference .hr-directory-footer > div { display: flex; gap: .35rem; }
+.hr-total-employees-reference .hr-pagination-button, .hr-total-employees-reference .hr-pagination-current { background: #fff; border: 1px solid #dce3ef; border-radius: 8px; color: #53627b; min-width: 34px; padding: .45rem .65rem; }
+.hr-total-employees-reference .hr-pagination-current { background: #5148db; border-color: #5148db; color: #fff; }
+.hr-total-employees-reference .hr-pagination-button:disabled { opacity: .5; }
+@media (max-width: 900px) { .hr-total-employees-reference .hr-employees-header { gap: 1rem; } .hr-total-employees-reference .hr-employees-header > .flex { margin-left: 0; } .hr-total-employees-reference .hr-directory-toolbar .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .hr-total-employees-reference .hr-directory-toolbar .relative { grid-column: 1 / -1; } }
+@media (max-width: 560px) { .hr-total-employees-reference { padding: 1.25rem .75rem 2.5rem; } .hr-total-employees-reference .hr-employees-header { padding: 0; } .hr-total-employees-reference .hr-workforce-title { font-size: 2.3rem; } .hr-total-employees-reference .hr-employees-header > .flex { width: 100%; } .hr-total-employees-reference .hr-employees-header > .flex button { flex: 1 1 auto; } .hr-total-employees-reference .hr-directory-toolbar .grid { grid-template-columns: 1fr; } .hr-total-employees-reference .hr-directory-toolbar .relative { grid-column: auto; } .hr-total-employees-reference .hr-directory-footer { align-items: flex-start; flex-direction: column; gap: .75rem; } }

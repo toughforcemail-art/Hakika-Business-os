@@ -1,0 +1,159 @@
+/* Keep the navigation action readable after legacy button normalization. */
+.hr-add-employee-page .border-t.pt-6 button:first-child {
+  background: #fff !important;
+  border: 2px solid #cbd5e1 !important;
+  color: #344054 !important;
+  font-weight: 700;
+}
+
+.hr-add-employee-page .border-t.pt-6 button:first-child:hover,
+.hr-add-employee-page .border-t.pt-6 button:first-child:focus-visible {
+  background: #f8fafc !important;
+  border-color: var(--teal) !important;
+  color: #075e54 !important;
+}
+
+.hr-add-employee-page .fixed.inset-0 {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, .72) !important;
+  backdrop-filter: blur(4px);
+}
+
+.hr-add-employee-page .fixed.inset-0 > div {
+  width: min(100%, 560px) !important;
+  box-sizing: border-box;
+  padding: 28px !important;
+  border: 1px solid #dce4ef !important;
+  border-radius: 18px !important;
+  background: #fff !important;
+  opacity: 1 !important;
+  color: #152238 !important;
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+}
+
+.hr-add-employee-page .fixed.inset-0 > div h3 {
+  margin: 0 0 18px;
+  color: #152238 !important;
+  font-size: 21px;
+  line-height: 1.25;
+}
+
+.hr-add-employee-page .fixed.inset-0 > div .space-y-3 {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.hr-add-employee-page .fixed.inset-0 > div .space-y-2 {
+  display: grid;
+  gap: 10px;
+}
+
+.hr-add-employee-page .fixed.inset-0 > div .flex.justify-between {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  align-items: center;
+  gap: 16px;
+}
+
+.hr-add-employee-page .fixed.inset-0 > div .flex.justify-between > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.hr-add-employee-page .fixed.inset-0 > div > .flex.gap-3 {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.hr-modal-button {
+  min-height: 44px;
+  flex: 1 1 0%;
+  border-radius: 12px !important;
+  padding: 10px 16px !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+}
+
+.hr-modal-button.secondary {
+  background: #fff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #344054 !important;
+}
+
+.hr-modal-button.primary {
+  background: var(--teal) !important;
+  border: 1px solid var(--teal) !important;
+  color: #fff !important;
+}
+
+.hr-modal-button.secondary:hover { background: #f8fafc !important; }
+.hr-modal-button.primary:hover { background: #075e54 !important; }
+
+.hr-page-back-button {
+  display: inline-flex !important;
+  min-height: 40px;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+  color: #344054 !important;
+  padding: 9px 13px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+}
+
+.hr-page-back-button svg { color: #344054 !important; }
+.hr-page-back-button:hover { border-color: var(--teal) !important; color: #075e54 !important; }
+
+/* The legacy utility classes can be reset by the workspace theme. Keep the
+   success action and delivery states explicit and readable. */
+.hr-success-button {
+  display: flex !important;
+  width: 100% !important;
+  min-height: 48px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1px solid #087f70 !important;
+  border-radius: 12px !important;
+  background: #087f70 !important;
+  color: #fff !important;
+  padding: 12px 18px !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
+  visibility: visible !important;
+}
+
+.hr-success-button:hover,
+.hr-success-button:focus-visible {
+  background: #075e54 !important;
+  border-color: #075e54 !important;
+  color: #fff !important;
+}
+
+.hr-delivery-status.sent { color: #087f70 !important; }
+.hr-delivery-status.failed { color: #c2410c !important; }
+.hr-delivery-status.not_reported { color: #a16207 !important; }
+.hr-delivery-status.not_provided { color: #64748b !important; }
+
+@media (max-width: 560px) {
+  .hr-add-employee-page .fixed.inset-0 { padding: 12px; }
+  .hr-add-employee-page .fixed.inset-0 > div { padding: 22px !important; }
+  .hr-add-employee-page .fixed.inset-0 > div > .flex.gap-3 { grid-template-columns: 1fr; }
+}

@@ -72,7 +72,7 @@ export async function proxyToAppMfa(request: Request, operation: "challenge" | "
     if (request.headers.get("content-type")?.split(";", 1)[0] !== "application/json") return Response.json({ error: "Invalid request" }, { status: 415 });
     try { body = await request.json(); } catch { return Response.json({ error: "Invalid request" }, { status: 400 }); }
   }
-  const edgeBody = operation === "challenge" ? { purpose, channel: body.channel === "email" ? "email" : "phone" } : operation === "verify" ? { purpose, challengeId: challenge, otp: typeof body.otp === "string" ? body.otp : "" } : operation === "resend" ? { purpose, challengeId: challenge } : {};
+  const edgeBody = operation === "challenge" ? { purpose, channel: body.channel === "email" ? "email" : "phone" } : operation === "verify" ? { purpose, challengeId: challenge, otp: typeof body.otp === "string" ? body.otp : "", channel: body.channel === "phone" ? "phone" : "email" } : operation === "resend" ? { purpose, challengeId: challenge, channel: body.channel === "phone" ? "phone" : "email" } : {};
   const { url, publishableKey } = getSupabasePublicConfig();
   const edgeUrl = `${url}/functions/v1/app-mfa/${operation}${operation === "status" ? `?purpose=${purpose}` : ""}`;
   const edgeHeaders = new Headers();

@@ -1,4 +1,4 @@
-// @ts-nocheck
+ï»¿// @ts-nocheck
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, Camera, Copy, Database, Layers3, Pencil, Plus, Radio, RefreshCw, Search, Shield, Video, Wifi, X } from 'lucide-react';
@@ -306,7 +306,7 @@ const CctvDevicesPage: React.FC = () => {
           <div className="flex flex-wrap items-center gap-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
-              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search camera, zone, vendor…" className="rounded-xl border border-white/10 bg-[#111827] py-2.5 pl-9 pr-4 text-sm text-slate-200 outline-none focus:border-brand-purple/50 hover:border-white/15 w-56" />
+              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search camera, zone, vendorâ€¦" className="rounded-xl border border-white/10 bg-[#111827] py-2.5 pl-9 pr-4 text-sm text-slate-200 outline-none focus:border-brand-purple/50 hover:border-white/15 w-56" />
             </div>
             <select value={selectedCentreId} onChange={(e) => { setSelectedCentreId(e.target.value); setSelectedSiteId('all'); }} className="rounded-xl border border-white/10 bg-[#111827] px-4 py-2.5 text-sm text-slate-200 outline-none focus:border-brand-purple/50 hover:border-white/15">
               <option value="all">All Branches</option>
@@ -342,7 +342,7 @@ const CctvDevicesPage: React.FC = () => {
                     <span className={`h-2.5 w-2.5 rounded-full ${conf.dot}`} />
                     <div>
                       <h2 className="font-bold text-white">{nvr?.device_name || 'Unassigned Cameras'}</h2>
-                      <p className="text-xs text-slate-500">{site?.name || 'No site'}{nvr ? ` · ${nvr.host}:${nvr.port}` : ''}</p>
+                      <p className="text-xs text-slate-500">{site?.name || 'No site'}{nvr ? ` Â· ${nvr.host}:${nvr.port}` : ''}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -379,12 +379,12 @@ const CctvDevicesPage: React.FC = () => {
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
                               <p className="truncate font-bold text-white">{camera.camera_name}</p>
-                              <p className="truncate text-[10px] text-slate-500">CH {camera.channel_no ?? '--'} · {camera.coverage_zone || 'Coverage pending'}</p>
+                              <p className="truncate text-[10px] text-slate-500">CH {camera.channel_no ?? '--'} Â· {camera.coverage_zone || 'Coverage pending'}</p>
                             </div>
                           </div>
                           <div className="mt-3 grid grid-cols-2 gap-1.5 text-[10px] text-slate-500">
                             <span>Vendor: {camera.vendor}</span>
-                            <span>Site: {siteMap.get(camera.site_id)?.name || '—'}</span>
+                            <span>Site: {siteMap.get(camera.site_id)?.name || 'â€”'}</span>
                           </div>
                           <div className="mt-4 flex flex-wrap gap-2">
                             <button type="button" onClick={() => openEditUrl(camera)} className="inline-flex items-center gap-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-slate-300 transition-all hover:bg-white/10">
@@ -427,7 +427,7 @@ const CctvDevicesPage: React.FC = () => {
               <div className="col-span-2">
                 <label className={labelCls}>Site</label>
                 <select value={nvrForm.site_id} onChange={(e) => setNvrForm(f => ({ ...f, site_id: e.target.value }))} className={inputCls}>
-                  <option value="">Select site…</option>
+                  <option value="">Select siteâ€¦</option>
                   {sites.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
@@ -469,7 +469,7 @@ const CctvDevicesPage: React.FC = () => {
             </div>
             <div className="mt-5 flex justify-end gap-3">
               <button type="button" onClick={() => { setShowAddNvr(false); setEditNvr(null); }} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/10">Cancel</button>
-              <button type="button" onClick={() => void saveNvr()} disabled={saving} className="rounded-xl bg-brand-purple px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-purple/90 disabled:opacity-50">{saving ? 'Saving…' : 'Save NVR'}</button>
+              <button type="button" onClick={() => void saveNvr()} disabled={saving} className="rounded-xl bg-brand-purple px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-purple/90 disabled:opacity-50">{saving ? 'Savingâ€¦' : 'Save NVR'}</button>
             </div>
           </div>
         </div>
@@ -487,21 +487,21 @@ const CctvDevicesPage: React.FC = () => {
               <div>
                 <label className={labelCls}>Site</label>
                 <select value={cameraForm.site_id} onChange={(e) => setCameraForm(f => ({ ...f, site_id: e.target.value }))} className={inputCls}>
-                  <option value="">Select site…</option>
+                  <option value="">Select siteâ€¦</option>
                   {sites.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
               <div>
                 <label className={labelCls}>NVR</label>
                 <select value={cameraForm.nvr_id} onChange={(e) => setCameraForm(f => ({ ...f, nvr_id: e.target.value }))} className={inputCls}>
-                  <option value="">Select NVR…</option>
+                  <option value="">Select NVRâ€¦</option>
                   {nvrs.map(n => <option key={n.id} value={n.id}>{n.device_name}</option>)}
                 </select>
               </div>
               <div>
                 <label className={labelCls}>NVR</label>
                 <select value={cameraForm.nvr_id} onChange={(e) => setCameraForm(f => ({ ...f, nvr_id: e.target.value }))} className={inputCls}>
-                  <option value="">Select NVR…</option>
+                  <option value="">Select NVRâ€¦</option>
                   {nvrs.map(n => <option key={n.id} value={n.id}>{n.device_name}</option>)}
                 </select>
               </div>
@@ -523,7 +523,7 @@ const CctvDevicesPage: React.FC = () => {
               </div>
               <div className="col-span-2">
                 <label className={labelCls}>Live View / HLS URL</label>
-                <input value={cameraForm.live_view_url} onChange={(e) => setCameraForm(f => ({ ...f, live_view_url: e.target.value }))} className={inputCls} placeholder="http://…/stream.m3u8" />
+                <input value={cameraForm.live_view_url} onChange={(e) => setCameraForm(f => ({ ...f, live_view_url: e.target.value }))} className={inputCls} placeholder="http://â€¦/stream.m3u8" />
               </div>
               <div>
                 <label className={labelCls}>Snapshot Path</label>
@@ -542,7 +542,7 @@ const CctvDevicesPage: React.FC = () => {
             </div>
             <div className="mt-5 flex justify-end gap-3">
               <button type="button" onClick={() => setShowAddCamera(false)} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/10">Cancel</button>
-              <button type="button" onClick={() => void saveCamera()} disabled={saving} className="rounded-xl bg-brand-purple px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-purple/90 disabled:opacity-50">{saving ? 'Saving…' : 'Save Camera'}</button>
+              <button type="button" onClick={() => void saveCamera()} disabled={saving} className="rounded-xl bg-brand-purple px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-purple/90 disabled:opacity-50">{saving ? 'Savingâ€¦' : 'Save Camera'}</button>
             </div>
           </div>
         </div>
@@ -553,13 +553,13 @@ const CctvDevicesPage: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0d1424] p-6 shadow-2xl">
             <div className="mb-5 flex items-center justify-between">
-              <h3 className="font-bold text-white">Edit URLs — {editUrlCamera.camera_name}</h3>
+              <h3 className="font-bold text-white">Edit URLs â€” {editUrlCamera.camera_name}</h3>
               <button type="button" onClick={() => setEditUrlCamera(null)} className="rounded-lg p-1.5 text-slate-400 hover:text-white"><X size={18} /></button>
             </div>
             <div className="space-y-4">
               <div>
                 <label className={labelCls}>Live View / HLS URL</label>
-                <input value={urlForm.live_view_url} onChange={(e) => setUrlForm(f => ({ ...f, live_view_url: e.target.value }))} className={inputCls} placeholder="http://…/stream.m3u8" />
+                <input value={urlForm.live_view_url} onChange={(e) => setUrlForm(f => ({ ...f, live_view_url: e.target.value }))} className={inputCls} placeholder="http://â€¦/stream.m3u8" />
               </div>
               <div>
                 <label className={labelCls}>Stream Path</label>
@@ -568,7 +568,7 @@ const CctvDevicesPage: React.FC = () => {
             </div>
             <div className="mt-5 flex justify-end gap-3">
               <button type="button" onClick={() => setEditUrlCamera(null)} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/10">Cancel</button>
-              <button type="button" onClick={() => void saveUrlEdit()} disabled={saving} className="rounded-xl bg-brand-purple px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-purple/90 disabled:opacity-50">{saving ? 'Saving…' : 'Save URLs'}</button>
+              <button type="button" onClick={() => void saveUrlEdit()} disabled={saving} className="rounded-xl bg-brand-purple px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-purple/90 disabled:opacity-50">{saving ? 'Savingâ€¦' : 'Save URLs'}</button>
             </div>
           </div>
         </div>

@@ -125,10 +125,42 @@ export async function handleProvision(request) {
   const organizationName = typeof body.organizationName === "string" ? body.organizationName.trim() : "";
   const companyName = typeof body.companyName === "string" ? body.companyName.trim() : "";
   const applicationKeys = Array.isArray(body.applicationKeys) ? body.applicationKeys.filter((value) => typeof value === "string") : [];
-  if (!organizationName || !companyName || !applicationKeys.length) throw safeError(400, "Organization, company and applications are required");
+  const directorEmail = typeof body.directorEmail === "string" ? body.directorEmail.trim().toLowerCase() : null;
+  const directorPhone = typeof body.directorPhone === "string" ? body.directorPhone.trim() : null;
+  if (!organizationName || !companyName || !applicationKeys.length || (!directorEmail && !directorPhone)) throw safeError(400, "Organization, company, applications and a Director email or phone are required");
   const result = await rest(auth, "rpc/provision_organization", { method: "POST", headers: { "Content-Profile": "platform", Prefer: "return=representation" }, body: JSON.stringify({ p_organization_name: organizationName, p_company_name: companyName, p_organization_slug: typeof body.organizationSlug === "string" ? body.organizationSlug : null, p_company_code: typeof body.companyCode === "string" ? body.companyCode : null, p_owner_user_id: typeof body.ownerUserId === "string" ? body.ownerUserId : null, p_application_keys: applicationKeys, p_plan_key: typeof body.planKey === "string" ? body.planKey : null, p_trial_days: typeof body.trialDays === "number" ? body.trialDays : 14, p_request_key: typeof body.requestKey === "string" ? body.requestKey : randomUUID() }) });
-  await audit(auth, request, platform.organizationId, "platform.provision", "success", "Platform organization provisioning completed");
-  return json(result, 201);
+  const organizationId = result?.organization_id;
+  if (!organizationId) throw safeError(502, "Organization was created but its identity could not be confirmed");
+
+  const applications = await rest(auth, `applications?application_key=in.(${applicationKeys.map((key) => encodeURIComponent(key.toUpperCase())).join(",")})&status=eq.active&select=id,application_key,name`, {}, "platform");
+  if (!applications.length) throw safeError(400, "No selected applications are active");
+  const roles = await rest(auth, `roles?organization_id=eq.${organizationId}&role_key=eq.director&select=id` , {}, "iam");
+  let directorRoleId = roles[0]?.id;
+  if (!directorRoleId) {
+    const createdRole = await rest(auth, "roles", { method: "POST", headers: { "Content-Profile": "iam", Prefer: "return=representation" }, body: JSON.stringify({ organization_id: organizationId, application_id: null, role_key: "director", name: "Director", description: "Organization-wide operating access. Permissions remain editable by the organization administrator.", scope: "organization", is_system: false, is_read_only: false }) }, "iam");
+    directorRoleId = createdRole?.[0]?.id;
+  }
+  if (!directorRoleId) throw safeError(502, "Organization was created but the Director role could not be prepared");
+  const permissions = await rest(auth, "permissions?select=id,permission_key&permission_key=not.like.platform.*", {}, "iam");
+  if (permissions.length) await rest(auth, "role_permissions", { method: "POST", headers: { "Content-Profile": "iam", Prefer: "resolution=ignore-duplicates,return=minimal" }, body: JSON.stringify(permissions.map((permission) => ({ role_id: directorRoleId, permission_id: permission.id }))) }, "iam");
+  const rawToken = randomBytes(32).toString("hex");
+  const tokenHash = createHash("sha256").update(rawToken).digest("hex");
+  const invitation = await rest(auth, "invitations", { method: "POST", headers: { "Content-Profile": "iam", Prefer: "return=representation" }, body: JSON.stringify({ organization_id: organizationId, email: directorEmail, phone: directorPhone, token_hash: tokenHash, expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), invited_by: auth.userId, delivery_channel: directorEmail && directorPhone ? "both" : directorEmail ? "email" : "sms", delivery_status: "pending" }) }, "iam");
+  const invitationId = invitation?.[0]?.id;
+  if (!invitationId) throw safeError(502, "Organization was created but its Director invitation could not be created");
+  await rest(auth, "invitation_role_assignments", { method: "POST", headers: { "Content-Profile": "iam", Prefer: "return=minimal" }, body: JSON.stringify(applications.map((application) => ({ organization_id: organizationId, invitation_id: invitationId, application_id: application.id, role_id: directorRoleId }))) }, "iam");
+  const requestOrigin = typeof body.siteUrl === "string" && /^https:\/\//i.test(body.siteUrl) ? body.siteUrl.replace(/\/$/, "") : "https://hakika-business-os-frontend.vercel.app";
+  const inviteUrl = `${requestOrigin}/accept-invitation?token=${rawToken}`;
+  let delivery = {};
+  try {
+    const response = await fetch(`${config().url}/functions/v1/send-invitation`, { method: "POST", headers: { apikey: config().publishableKey, Authorization: `Bearer ${auth.token}`, "Content-Type": "application/json" }, body: JSON.stringify({ invitationId, inviteUrl }), signal: AbortSignal.timeout(12000) });
+    delivery = await response.json().catch(() => ({}));
+  } catch (error) {
+    console.error("Organization Director invitation delivery failed", error);
+    delivery = { warning: "Workspace created, but automatic invitation delivery failed. Use the secure link below or resend it from Invitations." };
+  }
+  await audit(auth, request, platform.organizationId, "platform.provision", "success", "Platform organization and Director invitation provisioned");
+  return json({ ...result, invitation_id: invitationId, invite_url: inviteUrl, director_role: "Director", delivery }, 201);
 }
 
 

@@ -40,9 +40,11 @@ async function sendSms(to: string, inviteUrl: string, organizationName: string) 
   const normalizedTo = normalizePhone(to);
   const response = await fetch(endpoint, { method: "POST", headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded", apiKey }, body: new URLSearchParams({ username, to: normalizedTo, message: `Hakika: You are invited to ${organizationName}. Set up your account: ${inviteUrl} Link expires in 48 hours.` }), signal: AbortSignal.timeout(8000) });
   const payload = await response.json().catch(() => ({}));
-  const recipient = payload?.SMSMessageData?.Recipients?.find((item: { number?: string }) => normalizePhone(String(item.number ?? "")) === normalizedTo);
+  if (!response.ok) throw new Error(`sms_provider_http_${response.status}`);
+  const recipients = Array.isArray(payload?.SMSMessageData?.Recipients) ? payload.SMSMessageData.Recipients : [];
+  const recipient = recipients.find((item: { number?: string }) => normalizePhone(String(item.number ?? "")) === normalizedTo) ?? (recipients.length === 1 ? recipients[0] : null);
   const accepted = String(recipient?.statusCode) === "100" || ["sent", "queued", "accepted"].includes(String(recipient?.status).toLowerCase());
-  if (!response.ok || !accepted) throw new Error("sms_provider_rejected");
+  if (!recipient || !accepted) throw new Error(`sms_provider_rejected_${String(recipient?.statusCode ?? "unknown")}_${String(recipient?.status ?? "unknown")}`);
 }
 
 export async function handleRequest(request: Request) {
@@ -60,11 +62,12 @@ export async function handleRequest(request: Request) {
     const organizations = await scopedRest(caller.token, `organizations?id=eq.${encodeURIComponent(invitation.organization_id)}&select=display_name`, {}, "platform") as { display_name: string }[];
     const organizationName = organizations[0]?.display_name || "your organization";
     const results: Record<string, string> = {};
-    if (invitation.email) { try { await sendEmail(invitation.email, inviteUrl, organizationName); results.email = "sent"; } catch { results.email = "failed"; } }
-    if (invitation.phone) { try { await sendSms(invitation.phone, inviteUrl, organizationName); results.sms = "sent"; } catch { results.sms = "failed"; } }
+    const details: Record<string, string> = {};
+    if (invitation.email) { try { await sendEmail(invitation.email, inviteUrl, organizationName); results.email = "sent"; } catch (error) { results.email = "failed"; details.email = error instanceof Error ? error.message : "email_delivery_failed"; } }
+    if (invitation.phone) { try { await sendSms(invitation.phone, inviteUrl, organizationName); results.sms = "sent"; } catch (error) { results.sms = "failed"; details.sms = error instanceof Error ? error.message : "sms_delivery_failed"; } }
     const delivered = Object.values(results).some((value) => value === "sent");
     await scopedRest(caller.token, `invitations?id=eq.${encodeURIComponent(invitationId)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ delivery_status: delivered ? "sent" : "failed", sent_at: delivered ? new Date().toISOString() : null }) }, "iam");
-    return json({ ok: delivered, results }, delivered ? 200 : 502);
+    return json({ ok: delivered, results, details }, delivered ? 200 : 502);
   } catch (error) { console.error("send-invitation failed", error); return json({ error: "Invitation delivery failed" }, 502); }
 }
 

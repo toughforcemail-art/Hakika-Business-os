@@ -1,4 +1,4 @@
-// @ts-nocheck
+ï»¿// @ts-nocheck
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, Copy, Database, Layers3, Pencil, Plus, Radio, Smartphone, SquarePlay, Wifi, X } from 'lucide-react';
@@ -242,7 +242,7 @@ const SmartPssConnections: React.FC = () => {
               </div>
               <h2 className="font-bold text-white">Mirror your recorder into the desktop client</h2>
               <p className="max-w-2xl text-sm text-slate-400">
-                Use the IP/Domain or SN-based device details below to add the recorder into SmartPSS Lite. This page does not log in for you — it exposes the device connection data from your site records.
+                Use the IP/Domain or SN-based device details below to add the recorder into SmartPSS Lite. This page does not log in for you â€” it exposes the device connection data from your site records.
               </p>
             </div>
             <div className="shrink-0 rounded-xl border border-white/8 bg-[#111827] p-4 text-xs text-slate-400 max-w-xs">
@@ -254,7 +254,7 @@ const SmartPssConnections: React.FC = () => {
         {/* NVR Connection Blocks */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">NVR Connection Blocks · {filteredNvrs.length} recorders</h2>
+            <h2 className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500">NVR Connection Blocks Â· {filteredNvrs.length} recorders</h2>
           </div>
 
           <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
@@ -334,7 +334,7 @@ const SmartPssConnections: React.FC = () => {
               <div className="col-span-2">
                 <label className={labelCls}>Site</label>
                 <select value={nvrForm.site_id} onChange={(e) => setNvrForm(f => ({ ...f, site_id: e.target.value }))} className={inputCls}>
-                  <option value="">Select site…</option>
+                  <option value="">Select siteâ€¦</option>
                   {sites.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
@@ -376,7 +376,7 @@ const SmartPssConnections: React.FC = () => {
             </div>
             <div className="mt-5 flex justify-end gap-3">
               <button type="button" onClick={() => { setShowAddNvr(false); setEditNvr(null); }} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/10">Cancel</button>
-              <button type="button" onClick={() => void saveNvr()} disabled={saving} className="rounded-xl bg-brand-purple px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-purple/90 disabled:opacity-50">{saving ? 'Saving…' : 'Save NVR'}</button>
+              <button type="button" onClick={() => void saveNvr()} disabled={saving} className="rounded-xl bg-brand-purple px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-purple/90 disabled:opacity-50">{saving ? 'Savingâ€¦' : 'Save NVR'}</button>
             </div>
           </div>
         </div>
@@ -387,7 +387,7 @@ const SmartPssConnections: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0d1424] p-6 shadow-2xl">
             <div className="mb-5 flex items-center justify-between">
-              <h3 className="font-bold text-white">Edit URLs — {editUrlNvr.device_name}</h3>
+              <h3 className="font-bold text-white">Edit URLs â€” {editUrlNvr.device_name}</h3>
               <button type="button" onClick={() => setEditUrlNvr(null)} className="rounded-lg p-1.5 text-slate-400 hover:text-white"><X size={18} /></button>
             </div>
             <div className="space-y-4">
@@ -402,7 +402,7 @@ const SmartPssConnections: React.FC = () => {
             </div>
             <div className="mt-5 flex justify-end gap-3">
               <button type="button" onClick={() => setEditUrlNvr(null)} className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/10">Cancel</button>
-              <button type="button" onClick={() => void saveUrlEdit()} disabled={saving} className="rounded-xl bg-brand-purple px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-purple/90 disabled:opacity-50">{saving ? 'Saving…' : 'Save URLs'}</button>
+              <button type="button" onClick={() => void saveUrlEdit()} disabled={saving} className="rounded-xl bg-brand-purple px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-purple/90 disabled:opacity-50">{saving ? 'Savingâ€¦' : 'Save URLs'}</button>
             </div>
           </div>
         </div>

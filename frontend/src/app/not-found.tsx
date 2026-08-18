@@ -2,12 +2,11 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import styles from './not-found.module.css'
 
 function RouteIllustration() {
   return (
     <svg
-      className={styles.illustration}
+      className="nf-illustration"
       viewBox="0 0 560 430"
       role="img"
       aria-labelledby="route-illustration-title route-illustration-description"
@@ -69,35 +68,35 @@ export default function NotFound() {
   const router = useRouter()
 
   return (
-    <main className={styles.page}>
-      <header className={styles.header}>
-        <Link href="/" className={styles.brand} aria-label="Hakika Business OS home">
-          <span className={styles.brandMark} aria-hidden="true"><i /><i /><i /></span>
+    <main className="nf-page">
+      <header className="nf-header">
+        <Link href="/" className="nf-brand" aria-label="Hakika Business OS home">
+          <span className="nf-brand-mark" aria-hidden="true"><i /><i /><i /></span>
           <span><strong>Hakika</strong><small>Business OS</small></span>
         </Link>
 
-        <Link href="/support" className={styles.supportLink}>Support</Link>
+        <Link href="/support" className="nf-support-link">Support</Link>
       </header>
 
-      <section className={styles.content} aria-labelledby="not-found-title">
-        <div className={styles.card}>
-          <div className={styles.copy}>
-            <p className={styles.eyebrow}>Page not found</p>
-            <p className={styles.code} aria-hidden="true">404</p>
+      <section className="nf-content" aria-labelledby="not-found-title">
+        <div className="nf-card">
+          <div className="nf-copy">
+            <p className="nf-eyebrow">Page not found</p>
+            <p className="nf-code" aria-hidden="true">404</p>
             <h1 id="not-found-title">This page took a wrong turn.</h1>
-            <p className={styles.description}>The link may be outdated, the page may have moved, or you may not have access to this destination.</p>
+            <p className="nf-description">The link may be outdated, the page may have moved, or you may not have access to this destination.</p>
 
-            <div className={styles.actions}>
-              <Link href="/" className={styles.primaryButton}>Back to home</Link>
-              <Link href="/apps" className={styles.secondaryButton}>Open app launcher</Link>
+            <div className="nf-actions">
+              <Link href="/" className="nf-primary-button">Back to home</Link>
+              <Link href="/apps" className="nf-secondary-button">Open app launcher</Link>
             </div>
 
-            <button className={styles.backButton} type="button" onClick={() => router.back()}>
+            <button className="nf-back-button" type="button" onClick={() => router.back()}>
               <span aria-hidden="true">←</span> Go back
             </button>
           </div>
 
-          <div className={styles.visual}>
+          <div className="nf-visual">
             <RouteIllustration />
           </div>
         </div>

@@ -3,26 +3,27 @@ import "server-only";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { appMfaLoginStatus } from "@/lib/backend/proxy";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 
 export type AssuranceLevel = "aal1" | "aal2";
 export type VerifiedRequestContext = { userId: string; sessionId?: string; assuranceLevel: AssuranceLevel; membershipId?: string; organizationId?: string; companyId?: string; applicationKey?: string };
 
-export async function requireAuthenticatedUser() {
+export const requireAuthenticatedUser = cache(async function requireAuthenticatedUser() {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.getClaims();
   const claims = data?.claims;
   if (error || !claims?.sub) throw new Error("Unauthorized");
   return { supabase, claims, context: { userId: claims.sub, sessionId: claims.session_id, assuranceLevel: claims.aal === "aal2" ? "aal2" : "aal1" as AssuranceLevel } };
-}
+});
 
-export async function requireHakikaLoginVerification(nextPath = "/apps") {
+export const requireHakikaLoginVerification = cache(async function requireHakikaLoginVerification(nextPath = "/apps") {
   try {
     await requireAuthenticatedUser();
     const response = await appMfaLoginStatus();
     if (response.ok && (await response.json() as { verified?: boolean }).verified) return;
   } catch { /* resolve below to the controlled verification route */ }
   redirect(`/auth/verify?next=${encodeURIComponent(nextPath)}`);
-}
+});
 
 export async function requireAssuranceLevel(required: AssuranceLevel = "aal2") {
   const result = await requireAuthenticatedUser();

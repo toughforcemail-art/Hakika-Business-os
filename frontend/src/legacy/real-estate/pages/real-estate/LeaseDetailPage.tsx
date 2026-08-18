@@ -1,4 +1,4 @@
-// @ts-nocheck
+ï»¿// @ts-nocheck
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
@@ -59,7 +59,7 @@ const getPropertyAddress = (lease: Lease) => {
   return (prop as any)?.address ?? '';
 };
 
-const getUnitNumber = (lease: Lease) => lease.unit?.unit_number ?? '—';
+const getUnitNumber = (lease: Lease) => lease.unit?.unit_number ?? 'â€”';
 
 const fmt = (d: string) => new Date(d).toLocaleDateString('en-KE', { day: 'numeric', month: 'long', year: 'numeric' });
 const fmtDay = (n: number) => {
@@ -95,7 +95,7 @@ function buildAgreementHTML(lease: Lease): string {
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<title>Tenancy Agreement – ${tenantName}</title>
+<title>Tenancy Agreement â€“ ${tenantName}</title>
 <style>
   @page { margin: 2.5cm 2cm; }
   * { box-sizing: border-box; }
@@ -156,11 +156,11 @@ function buildAgreementHTML(lease: Lease): string {
 
     <li>To pay rent of Kenya Shillings <span class="bold">${rent}</span> per month payable monthly without any deductions whatsoever. The rent shall be paid on the <span class="bold">${payDay}</span> Day of each month to the Landlords bank account. Upon payment the Tenant shall be required to immediately submit the original banking slip to Hakika Real Estate Office or send via <em>WhatsApp the receipt</em> to <em>0737739547</em>. The Tenant who opts to pay rent through M-Pesa shall be required to send the <em>M-Pesa reference</em> text to <em>0737739547</em>. Rent paid past midnight of the 5th day of every month shall attract a late rent fee charge of 10% rent to be paid as additional rent.</li>
 
-    <li>To pay all electricity bill account number………………and water charges account number…………… in respect of demised premises during the tenancy period and present evidence of paid bills on a monthly basis. Any withstanding bills may be reserved in the same manner as the rent.</li>
+    <li>To pay all electricity bill account numberâ€¦â€¦â€¦â€¦â€¦â€¦and water charges account numberâ€¦â€¦â€¦â€¦â€¦ in respect of demised premises during the tenancy period and present evidence of paid bills on a monthly basis. Any withstanding bills may be reserved in the same manner as the rent.</li>
 
     <li>It is assumed that the Tenant has inspected the demised premises and accepted to take the property as is prior to or during the signing of this contract.</li>
 
-    <li>To pay Kenya Shillings ………………………………… as tenancy fees being the cost of preparation of this tenancy agreement.</li>
+    <li>To pay Kenya Shillings â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦ as tenancy fees being the cost of preparation of this tenancy agreement.</li>
 
     <li>To keep the interior of all the buildings forming part of the premises including all the doors, windows, keys, all water taps, baths, showers, light fittings and all other Landlords fixtures and fittings well and sufficiently clean and in good state of repair and condition, and to make good any damage to the premises that may be caused by that tenant, his family, employee or guest and to yield up to the premises in like repair and condition at expiration or sooner determination of the said term including replacing all lost, broken or damaged items with items of similar kind and quality.</li>
 
@@ -206,7 +206,7 @@ function buildAgreementHTML(lease: Lease): string {
       <div class="sig-col">
         <div class="sig-line"></div>
         <div class="sig-label"><strong>Landlord or Landlord Authorized Agent</strong></div>
-        <div class="date-line">Date: ……………………………</div>
+        <div class="date-line">Date: â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦</div>
       </div>
       <div class="sig-col" style="text-align:right;">
         <div style="border: 1px solid #999; padding: 8px; font-size: 10pt; text-align: left; min-height: 60px;">
@@ -223,12 +223,12 @@ function buildAgreementHTML(lease: Lease): string {
         <div class="sig-line"></div>
         <div class="sig-label"><strong>${tenantName}</strong></div>
         <div class="sig-label">Tenant</div>
-        <div class="date-line">Date: ……………………………</div>
+        <div class="date-line">Date: â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦</div>
       </div>
       <div class="sig-col">
         <div class="sig-line"></div>
         <div class="sig-label">Witness</div>
-        <div class="date-line">Date: ……………………………</div>
+        <div class="date-line">Date: â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦â€¦</div>
       </div>
     </div>
   </div>
@@ -419,8 +419,8 @@ export default function LeaseDetailPage() {
               { label: 'Water Deposit', value: `Ksh ${Number(lease.water_deposit_amount || 0).toLocaleString()}` },
               { label: 'Electricity Deposit', value: `Ksh ${Number(lease.electricity_deposit_amount || 0).toLocaleString()}` },
               { label: 'Deposit To',    value: depositPaidTo },
-              { label: 'Term',          value: lease.duration_months ? `${lease.duration_months} months` : '—' },
-              { label: 'Payment Day',   value: lease.payment_day ? `Day ${lease.payment_day}` : '—' },
+              { label: 'Term',          value: lease.duration_months ? `${lease.duration_months} months` : 'â€”' },
+              { label: 'Payment Day',   value: lease.payment_day ? `Day ${lease.payment_day}` : 'â€”' },
             ].map((stat) => (
               <div key={stat.label} className="bg-white dark:bg-dark-surface p-4">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{stat.label}</p>
@@ -433,11 +433,11 @@ export default function LeaseDetailPage() {
           <div className="p-6 space-y-4">
             <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
               <Building2 size={16} className="text-brand-purple shrink-0" />
-              <span><span className="font-bold text-gray-900 dark:text-white">{propertyName}</span> — Unit {unitNumber}</span>
+              <span><span className="font-bold text-gray-900 dark:text-white">{propertyName}</span> â€” Unit {unitNumber}</span>
             </div>
             <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
               <Calendar size={16} className="text-brand-purple shrink-0" />
-              <span>{new Date(lease.start_date).toLocaleDateString()} — {lease.end_date ? new Date(lease.end_date).toLocaleDateString() : 'Open-ended'}</span>
+              <span>{new Date(lease.start_date).toLocaleDateString()} â€” {lease.end_date ? new Date(lease.end_date).toLocaleDateString() : 'Open-ended'}</span>
             </div>
             <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
               <Clock size={16} className="text-brand-purple shrink-0" />
@@ -493,7 +493,7 @@ export default function LeaseDetailPage() {
               </div>
               <div>
                 <h3 className="text-sm font-black">Tenancy Agreement</h3>
-                <p className="text-[9px] text-gray-400 dark:text-white/30 font-bold uppercase tracking-widest">Republic of Kenya — Full Agreement</p>
+                <p className="text-[9px] text-gray-400 dark:text-white/30 font-bold uppercase tracking-widest">Republic of Kenya â€” Full Agreement</p>
               </div>
             </div>
             <button
@@ -504,10 +504,10 @@ export default function LeaseDetailPage() {
             </button>
           </div>
           <div className="p-6 space-y-3 text-sm text-gray-600 dark:text-gray-400">
-            <p className="font-bold text-center text-gray-900 dark:text-white text-base">Republic of Kenya — TENANCY AGREEMENT</p>
+            <p className="font-bold text-center text-gray-900 dark:text-white text-base">Republic of Kenya â€” TENANCY AGREEMENT</p>
             <p>This agreement is between <strong>Hakika Real Estate Limited</strong> (Managing Agents) on behalf of the Landlord, and <strong>{tenantName}</strong> (Tenant) for the premises at <strong>{propertyName}</strong>, Unit <strong>{unitNumber}</strong>.</p>
-            <p>Monthly rent: <strong>Ksh {Number(lease.rent_amount || 0).toLocaleString()}</strong> &nbsp;·&nbsp; Gate Key Deposit: <strong>Ksh {Number(lease.deposit_amount || 0).toLocaleString()}</strong> &nbsp;·&nbsp; Water deposit: <strong>Ksh {Number(lease.water_deposit_amount || 0).toLocaleString()}</strong> &nbsp;·&nbsp; Electricity deposit: <strong>Ksh {Number(lease.electricity_deposit_amount || 0).toLocaleString()}</strong> &nbsp;·&nbsp; Total deposits: <strong>Ksh {totalDeposit}</strong> &nbsp;·&nbsp; Deposit recipient: <strong>{depositPaidTo.toUpperCase()}</strong> &nbsp;·&nbsp; Payment due: <strong>Day {lease.payment_day}</strong> of each month.</p>
-            <p className="text-[11px] text-gray-400 dark:text-white/30 italic">Click "Print / Save PDF" to open the full 4-page agreement with all 14 clauses, signature blocks, and Hakika letterhead — ready to print or save as PDF.</p>
+            <p>Monthly rent: <strong>Ksh {Number(lease.rent_amount || 0).toLocaleString()}</strong> &nbsp;Â·&nbsp; Gate Key Deposit: <strong>Ksh {Number(lease.deposit_amount || 0).toLocaleString()}</strong> &nbsp;Â·&nbsp; Water deposit: <strong>Ksh {Number(lease.water_deposit_amount || 0).toLocaleString()}</strong> &nbsp;Â·&nbsp; Electricity deposit: <strong>Ksh {Number(lease.electricity_deposit_amount || 0).toLocaleString()}</strong> &nbsp;Â·&nbsp; Total deposits: <strong>Ksh {totalDeposit}</strong> &nbsp;Â·&nbsp; Deposit recipient: <strong>{depositPaidTo.toUpperCase()}</strong> &nbsp;Â·&nbsp; Payment due: <strong>Day {lease.payment_day}</strong> of each month.</p>
+            <p className="text-[11px] text-gray-400 dark:text-white/30 italic">Click "Print / Save PDF" to open the full 4-page agreement with all 14 clauses, signature blocks, and Hakika letterhead â€” ready to print or save as PDF.</p>
           </div>
         </div>
 
